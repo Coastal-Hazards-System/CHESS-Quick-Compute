@@ -4,32 +4,56 @@
    Layout rules use the CSS variables; theme.js sets the two attributes from the
    launcher-set preferences (CHESSQC_PREFS) / landing-page toggle. */
 
-/* ---- color tokens (mode) ---- */
+/* ---- neutral tokens (depend on MODE only; shared by both palettes) ---- */
 :root, html[data-theme="light"] {
   --bg: #f6f3ed; --fg: #16211f; --panel: #ffffff; --border: #e2dcd0;
-  --header-bg: #eeeae1; --label: #4c5a5c; --muted: #6e8086; --grid: #e2dcd0;
-  --ctl-bg: #ffffff; --ctl-border: #cfc7b7; --accent: #008cb0; --accent-hover: #007393;
-  --on-accent: #ffffff; --btn-bg: #fbf8f2; --btn-hover: #f1ede4; --danger: #e5210a;
-  --plot-bg: #ffffff; --plot-fg: #16211f; --plot-grid: #e2dcd0; --plot-axis: #cfc7b7; --plot-text: #6e8086;
-  --cls-a: #16b048; --cls-b: #f5ae1b; --cls-c: #e5210a; /* fidelity class A/B/C (success/warning/danger) */
-  --plot-eta: #008cb0; --plot-u: #008cb0; --plot-w: #a86f2f;  /* brand turquoise + sand */
-  /* per functional-area card colors (Vibrant) */
-  --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
-  --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
-  --area-9: #6a4ec2; --area-10: #b83280;
+  --header-bg: #eeeae1; --label: #4c5a5c; --muted: #7c888b; --grid: #e2dcd0;
+  --ctl-bg: #ffffff; --ctl-border: #cfc7b7; --btn-bg: #fbf8f2; --btn-hover: #f1ede4;
+  --plot-bg: #ffffff; --plot-fg: #16211f; --plot-grid: #e2dcd0; --plot-axis: #cfc7b7; --plot-text: #7c888b;
+  --plot-w: #a86f2f;   /* sand neutral (mode-dependent, palette-independent) */
 }
 html[data-theme="dark"] {
   --bg: #0b1316; --fg: #eaf2f3; --panel: #121d21; --border: #243035;
-  --header-bg: #0a1115; --label: #a7b7bb; --muted: #7c888b; --grid: #243035;
-  --ctl-bg: #16242a; --ctl-border: #33444b; --accent: #2bb8d4; --accent-hover: #5bcee2;
-  --on-accent: #06222a; --btn-bg: #16242a; --btn-hover: #1b2a30; --danger: #e5654f;
+  --header-bg: #0a1115; --label: #a7b7bb; --muted: #6e8086; --grid: #243035;
+  --ctl-bg: #16242a; --ctl-border: #33444b; --btn-bg: #16242a; --btn-hover: #1b2a30;
   --plot-bg: #121d21; --plot-fg: #eaf2f3; --plot-grid: #243035; --plot-axis: #33444b; --plot-text: #a7b7bb;
+  --plot-w: #cda05f;
+}
+
+/* ---- chromatic tokens (depend on PALETTE x MODE). The palette is chosen in
+   run_chess_quick_compute.py (DEFAULT_PALETTE); one palette is used across BOTH modes
+   (no mix). Original is the default. ---- */
+:root, html[data-palette="original"][data-theme="light"] {            /* Original - Light */
+  --accent: #0a82a2; --accent-hover: #00799f; --on-accent: #ffffff; --danger: #bc2614;
+  --cls-a: #587836; --cls-b: #a98c5b; --cls-c: #bc2614;   /* fidelity A/B/C (success/warning/danger) */
+  --plot-eta: #0a82a2; --plot-u: #0a82a2;
+  --area-1: #0a82a2; --area-2: #587836; --area-3: #cbb07e; --area-4: #7c5c3e;
+  --area-5: #bc2614; --area-6: #0e9cbe; --area-7: #a98c5b; --area-8: #415a28;
+  --area-9: #6a4ca8; --area-10: #b83280;
+}
+html[data-palette="original"][data-theme="dark"] {                     /* Original - Dark */
+  --accent: #2bb8d4; --accent-hover: #5bcee2; --on-accent: #06222a; --danger: #e5654f;
   --cls-a: #9cb57a; --cls-b: #dcc8a1; --cls-c: #e5654f;
-  --plot-eta: #2bb8d4; --plot-u: #2bb8d4; --plot-w: #cda05f;
-  /* per functional-area card colors (Original) */
-  --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #a9805a;
-  --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #7de39a;
-  --area-9: #9a86e0; --area-10: #d97bb5;
+  --plot-eta: #2bb8d4; --plot-u: #2bb8d4;
+  --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #9a7b5c;
+  --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #74974f;
+  --area-9: #9a86d4; --area-10: #d97bb5;
+}
+html[data-palette="vibrant"][data-theme="light"] {                    /* Vibrant - Light */
+  --accent: #008cb0; --accent-hover: #007393; --on-accent: #ffffff; --danger: #e5210a;
+  --cls-a: #16b048; --cls-b: #db8c0a; --cls-c: #e5210a;
+  --plot-eta: #008cb0; --plot-u: #008cb0;
+  --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
+  --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
+  --area-9: #6a4ca8; --area-10: #b83280;
+}
+html[data-palette="vibrant"][data-theme="dark"] {                     /* Vibrant - Dark */
+  --accent: #1ad2ec; --accent-hover: #5be4f4; --on-accent: #03222a; --danger: #fa5638;
+  --cls-a: #34cc63; --cls-b: #fbcb55; --cls-c: #fa5638;
+  --plot-eta: #1ad2ec; --plot-u: #1ad2ec;
+  --area-1: #1ad2ec; --area-2: #7de39a; --area-3: #fbcb55; --area-4: #a9805a;
+  --area-5: #fa5638; --area-6: #27d9f0; --area-7: #f5ae1b; --area-8: #34cc63;
+  --area-9: #9a86d4; --area-10: #d97bb5;
 }
 
 /* ---- vibe tokens (style) ---- */

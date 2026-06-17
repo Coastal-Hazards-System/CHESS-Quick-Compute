@@ -9,11 +9,14 @@
 (function () {
   const MODES = ["Light", "Dark"];
   const VIBES = ["Signal", "Trail", "Forge"];
+  const PALETTES = ["Original", "Vibrant"];
   const LS_MODE = "chessqc_mode", LS_STAMP = "chessqc_stamp";
   const prefs = () => window.CHESSQC_PREFS || {};
 
   const currentVibe = () => (VIBES.includes(prefs().vibe) ? prefs().vibe : "Signal");
   const currentBadge = () => (["Tinted", "Solid"].includes(prefs().badge) ? prefs().badge : "Tinted");
+  // Color palette (Original | Vibrant) is launcher-set only; one palette across both modes.
+  const currentPalette = () => (PALETTES.includes(prefs().palette) ? prefs().palette : "Original");
 
   const currentMode = () => {
     const p = prefs();
@@ -31,6 +34,7 @@
     el.dataset.theme = currentMode().toLowerCase();
     el.dataset.style = currentVibe().toLowerCase();
     el.dataset.badge = currentBadge().toLowerCase();
+    el.dataset.palette = currentPalette().toLowerCase();
   };
   apply();   // run immediately (before paint)
 
@@ -45,5 +49,5 @@
     return next;
   };
 
-  window.CHESSQCUI = { getDecimals, currentMode, currentVibe, toggleMode, apply };
+  window.CHESSQCUI = { getDecimals, currentMode, currentVibe, currentPalette, toggleMode, apply };
 })();
