@@ -59,7 +59,8 @@ header {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 10px 16px; border-bottom: var(--bw) solid var(--border); background: var(--header-bg);
 }
-header .title { font-weight: 700; }
+header .title { font-weight: 700; color: var(--danger); }
+header .subtitle { color: var(--accent); font-weight: 600; }
 header .spacer { flex: 1; }
 header label { color: var(--label); }
 .badge { border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: 11px; }
