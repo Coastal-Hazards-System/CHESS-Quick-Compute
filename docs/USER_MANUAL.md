@@ -3,7 +3,11 @@
 
 Each tool computes in SI internally and displays in the selected unit system; ranges/defaults below are shown in display units. *Auto-generated from the application contracts by `common/gen_docs.py`; do not edit by hand.*
 
-Each app header carries a fidelity class: **A** exact · **B** standard · **C** provisional.
+Each app header carries a fidelity class:
+
+- **(A) exact** — every coefficient and variable-relationship is known from the source (nothing guessed) and the results are validated.
+- **(B) standard** — a named method that involves a self-made convention/inference or only partial validation.
+- **(C) provisional** — a needed coefficient or relationship had to be guessed or is not recoverable from the sources (or there is no numeric oracle).
 
 ## Contents
 - **Wave Prediction**
