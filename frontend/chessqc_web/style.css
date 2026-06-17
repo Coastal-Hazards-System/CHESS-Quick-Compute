@@ -208,6 +208,7 @@ main.landing { display: block; max-width: 1100px; margin: 0 auto; padding: 16px;
   padding: 16px 18px; box-shadow: var(--shadow); }
 .hl-card h3 { margin: 0 0 6px; color: var(--accent); font-size: 15px; }
 .hl-card p { margin: 0; color: var(--label); font-size: 13px; }
+.hl-card a { color: var(--accent); }
 
 .areas-section { margin-top: 40px; }
 .areas-section h2 { color: var(--fg); font-size: 18px; margin: 0 0 12px; }

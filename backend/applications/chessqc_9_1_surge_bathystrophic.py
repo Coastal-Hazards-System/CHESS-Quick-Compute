@@ -9,8 +9,8 @@ Classification: provisional. The analytic sub-models (gradient wind, pressure se
 and bottom stresses) are exact, but the integrated surge reproduces the Bodine TM-35
 oracle only to ballpark (~13.4 ft): Bodine read the wind-isovel field and the bathymetry
 from graphs, so the reference's own inputs are not recoverable, and Bodine himself cites a
-possible factor-of-two uncertainty. Already flagged "Screening only" (superseded by SLOSH /
-ADCIRC for operational use).
+possible factor-of-two uncertainty. Already flagged "Screening only" (superseded by ADCIRC
+for operational use).
 
 Method (Bodine 1971): the surge is built by integrating, along a traverse from the
 shelf edge to the shore as the storm passes, the reduced vertically-integrated
@@ -80,7 +80,7 @@ APP_META = AppMeta(
     cite="Bodine (1971) TM-35; Holland (1980); Myers (1954); TR/CERC",
     default_system="US",
     status="Screening only",
-    superseded_by="SLOSH / ADCIRC (operational forecasting)",
+    superseded_by="ADCIRC (operational forecasting)",
 )
 
 _WIND_MODELS = ("Holland (1980)", "Myers / Bodine (1954)")

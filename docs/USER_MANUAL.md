@@ -1400,7 +1400,7 @@ Originating ACES application: 8-3 "Surging of a Moored Vessel" (functional area:
 
 ### 9-1 — Bathystrophic Storm Surge  `[C]`
 
-**Status:** Screening only. Newer method: SLOSH / ADCIRC (operational forecasting).
+**Status:** Screening only. Newer method: ADCIRC (operational forecasting).
 
 First Quick Compute tool beyond the original 34 ACES applications (functional area: Storm Surge). Estimates open-coast hurricane surge along a single cross-shelf traverse by the quasi-1D bathystrophic method of Bodine (1971), CERC TM-35 (verification: Pararas-Carayannis 1975, TM-50).
 
