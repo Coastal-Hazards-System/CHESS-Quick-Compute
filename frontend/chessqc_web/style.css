@@ -186,7 +186,11 @@ th { background: var(--header-bg); }
 main.landing { display: block; max-width: 1100px; margin: 0 auto; padding: 16px; }
 .hero { text-align: center; padding: 56px 16px 36px; }
 .hero .wordmark { margin: 0; color: var(--danger); font-weight: 800; letter-spacing: .01em;
-  font-size: clamp(44px, 8vw, 84px); line-height: 1.05; }
+  font-size: clamp(44px, 8vw, 84px); line-height: 1.05; position: relative; display: inline-block; }
+/* lowercase release tag as a green superscript; absolutely placed so CHESS-QC stays centered */
+.hero .beta { position: absolute; left: 100%; top: .04em; margin-left: .1em;
+  font-size: .30em; font-weight: 700; font-style: italic; letter-spacing: .02em;
+  color: var(--cls-a); line-height: 1; }
 .hero .hero-sub { margin: 10px 0 0; color: var(--accent); font-weight: 600;
   font-size: clamp(15px, 2.4vw, 22px); }
 .hero .tagline { max-width: 720px; margin: 18px auto 0; color: var(--label); font-size: 15px; }

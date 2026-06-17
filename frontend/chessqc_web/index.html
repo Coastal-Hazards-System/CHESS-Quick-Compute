@@ -31,11 +31,11 @@
 
   <main class="landing">
     <section class="hero">
-      <h1 class="wordmark">CHESS-QC</h1>
+      <h1 class="wordmark">CHESS-QC<span class="beta" id="verTag"></span></h1>
       <p class="hero-sub">Coastal Hazards, Engineering, and Structures System (CHESS) — Quick Compute (QC)</p>
-      <p class="tagline">36 validated coastal-engineering calculators — wave prediction and theory,
-        transformation, structural design, runup and overtopping, littoral processes, inlets,
-        harbors, and storm surge — that run in your browser with no install.</p>
+      <p class="tagline">36 validated coastal-engineering calculators covering wave prediction and
+        theory, transformation, structural design, runup and overtopping, littoral processes,
+        inlets, harbors, and storm surge. They run in your browser with no install.</p>
       <div class="cta-row">
         <a class="cta cta-primary" href="apps.html">Launch calculators →</a>
         <a class="cta cta-secondary" href="docs.html">Documentation</a>
@@ -45,8 +45,8 @@
     <section class="highlights">
       <div class="hl-card">
         <h3>Serverless</h3>
-        <p>Runs entirely in the browser via Pyodide — no backend, no install. The same Python
-           application files power the desktop and command-line front-ends.</p>
+        <p>Runs entirely in the browser via Pyodide, with no backend and no install. The same
+           Python application files power the desktop and command-line front-ends.</p>
       </div>
       <div class="hl-card">
         <h3>Validated</h3>
@@ -78,11 +78,16 @@
       <a href="https://github.com/Coastal-Hazards-System/CHESS-Quick-Compute" target="_blank" rel="noopener">GitHub</a>
     </div>
     <p class="disclaimer">CHESS-QC reimplements the methods of ACES; each application cites ACES and its
-      underlying published sources. Intended for engineering screening, teaching, and research —
-      results should be reviewed by a qualified coastal engineer before use in design.</p>
+      underlying published sources. Intended for engineering screening, teaching, and research.
+      Results should be reviewed by a qualified coastal engineer before use in design.</p>
   </footer>
 
   <script>
+    // Version/release tag superscript on the wordmark (launcher-set; "" hides it).
+    const verTag = document.getElementById("verTag");
+    const tag = (window.CHESSQC_PREFS || {}).tag;
+    if (tag) verTag.textContent = tag; else verTag.remove();
+
     // Functional-areas overview, built from the same registry the selection page uses.
     const byArea = {};
     for (const a of CHESSQC_APPS) (byArea[a.area] ||= []).push(a);
