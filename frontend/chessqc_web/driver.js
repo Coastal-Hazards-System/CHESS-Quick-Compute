@@ -109,6 +109,14 @@ function buildForm() {
   badge.className = "badge cls-" + letter.toLowerCase();
   document.title = `CHESS-QC — ${m.name}`;
 
+  // Scalar-only apps have no profile/grid outputs, so the plot/table area would just be an
+  // empty placeholder. Hide it (and the plot-only export buttons) for those apps.
+  const hasPlottable = contract.outputs.some((o) => o.kind === "profile" || o.kind === "grid");
+  const tabs = document.querySelector(".tabs");
+  if (tabs) tabs.style.display = hasPlottable ? "" : "none";
+  if ($("png")) $("png").style.display = hasPlottable ? "" : "none";
+  if ($("csv")) $("csv").style.display = hasPlottable ? "" : "none";
+
   const box = $("inputs"); box.innerHTML = "";
   for (const fld of contract.inputs) {
     if (fld.kind === "table") {
