@@ -100,7 +100,7 @@ tolerance are tabulated in [`docs/VALIDATION_REPORT.md`](docs/VALIDATION_REPORT.
 ## Project layout
 
 ```
-backend/applications/   36 self-contained application modules (chessqc_*.py)
+backend/applications/   35+ self-contained application modules (chessqc_*.py)
 common/                 Python/JS bridge, unit conversion, documentation generators
 frontend/chessqc_web/   serverless web calculator (Pyodide)
 frontend/chessqc_gui/   PySide6 desktop application
