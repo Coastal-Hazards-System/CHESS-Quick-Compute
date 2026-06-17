@@ -5,7 +5,13 @@ Validation evidence for every built CHESS-QC application, compiled from each app
 
 **36 applications** built and validated. The validation *oracle* is, for most apps, the worked example in the ACES *User's Guide* (reproduced to the stated tolerance); where ACES provides no numeric example, validation is analytic (closed-form relations, limits, and cross-checks) or against the primary literature. Documented residuals/caveats are stated honestly per app.
 
-**Fidelity classes:** **A** exact -- every coefficient and variable-relationship is known from the source (nothing guessed) and the results are validated; **B** standard -- a named method that involves a self-made convention/inference or only partial validation; **C** provisional -- a needed coefficient or relationship had to be guessed or is not recoverable from the sources (or there is no numeric oracle). Empirical formulations are exact when their coefficients are known and the results validate.
+**Fidelity classes:**
+
+- **(A) exact** — every coefficient and variable-relationship is known from the source (nothing guessed) and the results are validated.
+- **(B) standard** — a named method that involves a self-made convention/inference or only partial validation.
+- **(C) provisional** — a needed coefficient or relationship had to be guessed or is not recoverable from the sources (or there is no numeric oracle).
+
+Empirical formulations are exact when their coefficients are known and the results validate.
 
 ## Summary
 

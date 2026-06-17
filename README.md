@@ -1,7 +1,7 @@
 # CHESS-QC
 *Coastal Hazards, Engineering, and Structures System (CHESS) — Quick Compute (QC)*
 
-A self-contained toolkit of **36 coastal-engineering calculators**: an open-source
+A self-contained toolkit of **35+ coastal-engineering calculators**: an open-source
 reimplementation of the U.S. Army Corps of Engineers **ACES** (Automated Coastal
 Engineering System) computational library, runnable in the browser with no
 install, as a native desktop application, or as standalone Python scripts.
