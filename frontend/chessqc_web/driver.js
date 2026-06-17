@@ -41,6 +41,11 @@ const toSI = (v, u) => v * f(u);
 const fromSI = (v, u) => v / f(u);
 
 const $ = (id) => document.getElementById(id);
+// Focus the first editable input (skips the SI/US unit radios); used on load and reset.
+const focusFirstInput = () => {
+  const el = document.querySelector("#inputs input:not([type=radio]), #inputs select, #inputs textarea");
+  if (el) el.focus();
+};
 let py, bridge, appmod, contract, system = "SI", lastRes = null;
 
 // fixed-decimal display (user-chosen, default 2); kills the "-0.00" artifact
@@ -95,6 +100,7 @@ for _nm, _p in [("chessqc_app","/chessqc_app.py"), ("bridge","/bridge.py")]:
     buildForm();
     $("overlay").style.display = "none";
     doCompute();
+    focusFirstInput();
   } catch (e) { fail(String(e)); }
 }
 
@@ -554,7 +560,11 @@ function fail(msg) { $("overlay").textContent = "Error: " + msg; setStatus(msg, 
 // --- wire up controls ---
 document.addEventListener("DOMContentLoaded", () => {
   $("compute").addEventListener("click", doCompute);
-  $("reset").addEventListener("click", () => { buildForm(); doCompute(); });
+  $("reset").addEventListener("click", () => { buildForm(); doCompute(); focusFirstInput(); });
+  // Enter anywhere in the inputs (except multi-line JSON/table textareas) runs Compute.
+  $("inputs").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); doCompute(); }
+  });
   document.querySelectorAll('input[name="units"]').forEach((r) =>
     r.addEventListener("change", (e) => onUnits(e.target.value)));
   document.querySelectorAll(".tabbar button").forEach((b) =>

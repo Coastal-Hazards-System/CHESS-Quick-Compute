@@ -55,6 +55,23 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         self._build_ui()
         self.resize(960, 700)
         self._on_compute()  # populate with defaults
+        self._focus_first_input()
+
+    def _focus_first_input(self):
+        """Focus the first input widget on open (parity with the web front-end)."""
+        for f in self.inputs:
+            w = self._widgets.get(f.key)
+            if w is not None:
+                w.setFocus()
+                break
+
+    def keyPressEvent(self, event):
+        """Enter/Return runs Compute (parity with the web front-end). A focused table
+        cell editor consumes the key first, so this does not disrupt table editing."""
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self._on_compute()
+            return
+        super().keyPressEvent(event)
 
     # ---- field unit helpers ----
     def _unit(self, f) -> str:
