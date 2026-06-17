@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHESS-QC — Calculator</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="_prefs.js"></script>
+  <script src="theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js"></script>
+  <script src="apps.js"></script>
+</head>
+<body>
+  <header>
+    <a id="home" href="index.html" class="homelink">← Applications</a>
+    <span class="title" id="appTitle">CHESS-QC</span>
+    <span id="appArea" class="muted"></span>
+    <span id="classBadge" class="badge" style="display:none"></span>
+    <span class="spacer"></span>
+    <label>Units:
+      <label><input type="radio" name="units" value="SI" checked> SI</label>
+      <label><input type="radio" name="units" value="US"> US</label>
+    </label>
+    <button id="reset">Reset</button>
+  </header>
+
+  <main>
+    <fieldset id="inputsBox"><legend>Inputs</legend><div id="inputs"></div></fieldset>
+    <div class="center"><button id="compute">▶ Compute</button></div>
+    <fieldset class="results" id="resultsBox"><legend>Results</legend>
+      <div id="values"></div>
+      <div class="tabs">
+        <div class="tabbar">
+          <button data-tab="plot" class="active">Plot</button>
+          <button data-tab="table">Table</button>
+        </div>
+        <div class="tabpane">
+          <div id="plotPane"><canvas id="plot" width="520" height="280"></canvas></div>
+          <div id="tablePane" class="scrollbox" style="display:none"></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:6px">
+        <button id="report">Save Report</button>
+        <button id="copy">Copy</button>
+        <button id="csv">Export CSV</button>
+        <button id="png">Save Plot</button>
+      </div>
+    </fieldset>
+  </main>
+
+  <div id="status">loading…</div>
+  <div id="overlay">Loading…<br><small style="color:var(--muted)">first run may take a moment</small></div>
+
+  <script src="driver.js"></script>
+</body>
+</html>

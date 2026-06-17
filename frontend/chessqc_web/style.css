@@ -1,0 +1,147 @@
+/* CHESS-QC web, WaveMaker theming on two orthogonal axes (mirrors the design):
+     html[data-theme]  -> color: light | dark
+     html[data-style]  -> vibe : signal | trail | forge   (shape / typography)
+   Layout rules use the CSS variables; theme.js sets the two attributes from the
+   launcher-set preferences (CHESSQC_PREFS) / landing-page toggle. */
+
+/* ---- color tokens (mode) ---- */
+:root, html[data-theme="light"] {
+  --bg: #f6f3ed; --fg: #16211f; --panel: #ffffff; --border: #e2dcd0;
+  --header-bg: #eeeae1; --label: #4c5a5c; --muted: #6e8086; --grid: #e2dcd0;
+  --ctl-bg: #ffffff; --ctl-border: #cfc7b7; --accent: #008cb0; --accent-hover: #007393;
+  --on-accent: #ffffff; --btn-bg: #fbf8f2; --btn-hover: #f1ede4; --danger: #e5210a;
+  --plot-bg: #ffffff; --plot-fg: #16211f; --plot-grid: #e2dcd0; --plot-axis: #cfc7b7; --plot-text: #6e8086;
+  --cls-a: #16b048; --cls-b: #f5ae1b; --cls-c: #e5210a; /* fidelity class A/B/C (success/warning/danger) */
+  --plot-eta: #008cb0; --plot-u: #008cb0; --plot-w: #a86f2f;  /* brand turquoise + sand */
+  /* per functional-area card colors (Vibrant) */
+  --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
+  --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
+}
+html[data-theme="dark"] {
+  --bg: #0b1316; --fg: #eaf2f3; --panel: #121d21; --border: #243035;
+  --header-bg: #0a1115; --label: #a7b7bb; --muted: #7c888b; --grid: #243035;
+  --ctl-bg: #16242a; --ctl-border: #33444b; --accent: #2bb8d4; --accent-hover: #5bcee2;
+  --on-accent: #06222a; --btn-bg: #16242a; --btn-hover: #1b2a30; --danger: #e5654f;
+  --plot-bg: #121d21; --plot-fg: #eaf2f3; --plot-grid: #243035; --plot-axis: #33444b; --plot-text: #a7b7bb;
+  --cls-a: #9cb57a; --cls-b: #dcc8a1; --cls-c: #e5654f;
+  --plot-eta: #2bb8d4; --plot-u: #2bb8d4; --plot-w: #cda05f;
+  /* per functional-area card colors (Original) */
+  --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #a9805a;
+  --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #7de39a;
+}
+
+/* ---- vibe tokens (style) ---- */
+:root, html[data-style="signal"] {        /* modern / crisp */
+  --radius: 8px; --ctl-radius: 6px; --bw: 1px; --weight: 600;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --label-font: var(--font); --label-transform: none; --label-spacing: .01em;
+  --mono: "Cascadia Mono", "Consolas", monospace;
+  --shadow: 0 1px 3px rgba(0,0,0,.07); --texture: none;
+}
+html[data-style="trail"] {                 /* rugged / earthy */
+  --radius: 6px; --ctl-radius: 4px; --bw: 1px; --weight: 700;
+  --label-transform: none; --label-spacing: .04em;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --texture: repeating-linear-gradient(135deg, rgba(245,174,27,.05) 0 2px, transparent 2px 9px);
+}
+html[data-style="forge"] {                 /* industrial / utilitarian */
+  --radius: 0px; --ctl-radius: 0px; --bw: 2px; --weight: 700;
+  --label-font: "JetBrains Mono", "Cascadia Mono", "Consolas", monospace;
+  --label-transform: uppercase; --label-spacing: .11em;
+  --shadow: 4px 4px 0 rgba(0,0,0,.14); --texture: none;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg) var(--texture); color: var(--fg); font: 13px/1.45 var(--font); }
+header {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: var(--bw) solid var(--border); background: var(--header-bg);
+}
+header .title { font-weight: 700; }
+header .spacer { flex: 1; }
+header label { color: var(--label); }
+.badge { border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: 11px; }
+html[data-style="forge"] .badge { border-radius: 0; }
+.badge.cls-a { background: color-mix(in srgb, var(--cls-a) 16%, transparent); color: var(--cls-a); }
+.badge.cls-b { background: color-mix(in srgb, var(--cls-b) 18%, transparent); color: color-mix(in srgb, var(--cls-b) 80%, var(--fg)); }
+.badge.cls-c { background: color-mix(in srgb, var(--cls-c) 15%, transparent); color: var(--cls-c); }
+/* solid-fill class badges (launcher: DEFAULT_BADGE = Solid) */
+html[data-badge="solid"] .badge.cls-a { background: var(--cls-a); }
+html[data-badge="solid"] .badge.cls-b { background: var(--cls-b); }
+html[data-badge="solid"] .badge.cls-c { background: var(--cls-c); }
+html[data-badge="solid"] .badge { color: #fff; }
+html[data-theme="dark"][data-badge="solid"] .badge { color: #0b1316; }
+/* card left-border is colored per functional area (set inline via --area-N in index.html) */
+button, select, input[type=number] {
+  font: inherit; color: var(--fg); border: var(--bw) solid var(--ctl-border);
+  border-radius: var(--ctl-radius); padding: 5px 8px; background: var(--ctl-bg); font-weight: var(--weight);
+}
+input#decimals { width: 56px; }
+input[type=number]:focus, select:focus { outline: none; border-color: var(--accent); }
+button { background: var(--btn-bg); cursor: pointer; }
+button:hover { background: var(--btn-hover); border-color: var(--accent); }
+button#compute {
+  background: var(--accent); color: var(--on-accent); border: none; border-radius: var(--ctl-radius);
+  padding: 10px 20px; font-weight: var(--weight); font-size: 14px;
+}
+button#compute:hover { background: var(--accent-hover); }
+/* Light/Dark toggle switch (WaveMaker .switch) */
+.switch { position: relative; width: 42px; height: 24px; display: inline-block; flex: none; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch .track { position: absolute; inset: 0; background: var(--ctl-border); border-radius: 999px; transition: background .2s; }
+.switch .thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff;
+  border-radius: 999px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track + .thumb { transform: translateX(18px); }
+html[data-style="forge"] .switch .track, html[data-style="forge"] .switch .thumb { border-radius: 0; }
+
+main { display: grid; grid-template-columns: 3fr auto 4fr; gap: 14px; padding: 16px; align-items: start; }
+fieldset {
+  border: var(--bw) solid var(--border); border-radius: var(--radius); background: var(--panel);
+  padding: 10px 14px; box-shadow: var(--shadow);
+}
+legend { font-weight: 600; color: var(--label); padding: 0 4px;
+  text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-family: var(--label-font); }
+.center { display: flex; align-items: center; justify-content: center; min-height: 200px; }
+
+.row { display: grid; grid-template-columns: 1fr 130px 40px; align-items: center; gap: 8px; margin: 6px 0; }
+.row label { color: var(--label); text-align: right;
+  text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-family: var(--label-font); }
+.row .unit { color: var(--muted); }
+
+.results .vrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 3px 0; }
+.results .vrow span:first-child { color: var(--label);
+  text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-family: var(--label-font); }
+.results .vrow .val { font-family: var(--mono); letter-spacing: normal; text-transform: none; }
+.tabs { margin-top: 10px; }
+.tabbar button { border: none; border-bottom: 2px solid transparent; background: transparent; border-radius: 0; color: var(--label); }
+.tabbar button.active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 600; }
+.tabpane { border: var(--bw) solid var(--border); border-radius: var(--ctl-radius); padding: 8px; background: var(--panel); }
+canvas { width: 100%; height: 280px; display: block; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { border: 1px solid var(--grid); padding: 2px 6px; text-align: right; }
+th { background: var(--header-bg); }
+.scrollbox { max-height: 240px; overflow: auto; }
+
+/* hub / landing page */
+.muted { color: var(--muted); }
+.hub { padding: 16px; }
+.hub fieldset { margin-bottom: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.app-card {
+  display: block; text-decoration: none; color: var(--fg); background: var(--panel);
+  border: var(--bw) solid var(--border); border-radius: var(--radius); padding: 12px 38px 12px 14px;
+  position: relative; box-shadow: var(--shadow);
+}
+.app-card:hover { border-color: var(--accent); background: var(--btn-hover); }
+.app-card .aid { font-weight: 700; color: var(--label); }
+.app-card .badge { position: absolute; right: 10px; top: 12px; }
+.homelink { text-decoration: none; color: var(--accent); font-weight: 600; margin-right: 6px; }
+.homelink:hover { text-decoration: underline; }
+
+#status { padding: 6px 16px; border-top: 1px solid var(--border); background: var(--header-bg); color: var(--label); }
+#status.err { color: var(--danger); }
+#overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--label);
+}

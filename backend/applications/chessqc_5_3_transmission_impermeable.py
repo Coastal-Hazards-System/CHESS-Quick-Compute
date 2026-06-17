@@ -1,0 +1,256 @@
+"""CHESS-QC application 5-3 — Wave Transmission on Impermeable Structures.
+
+Originating ACES grouping: 5-3 "Wave Transmission on Impermeable Structures" (functional
+area: Wave Runup, Transmission, and Overtopping). Estimates the height of the wave
+transmitted past an impermeable structure, either a sloped structure overtopped by waves
+or a vertical/composite (caisson-on-berm) structure, as a transmission coefficient
+K_T = H_T / H_i.
+
+Classification: exact (Seelig 1980 / Ahrens transmission with known published coefficients,
+nothing guessed; reproduces the User's Guide Examples 1-4 to 0.01 ft).
+Theory and references (TR chapter 5-3, eqs 1-7 + Tables 5-3-1/2 in docs/EQUATIONS.md):
+  - sloped structures (Seelig 1980, transmission by overtopping):
+        H_T = K_TO * H_i,   K_TO = C * (1 - F/R),   C = 0.51 - 0.11 (B/h_s)        (1-3)
+        R = runup from the 5-2 methods (rough Ahrens & McCartney; smooth Ahrens & Titus)
+  - vertical / composite structures (Seelig 1976):
+        K_TO = 0.5 {1 - sin[(pi/2 alpha)(F/H_i + beta)]}, clamped to [0,1] by domain   (4-7)
+        alpha = 1.8 + 0.4 min(B/d_s,1);  beta = C1 beta_1 + C2 beta_2
+        beta_1 = 0.1 + 0.3 min(B/d_s,1);  beta_2 = 0.1 (d1/ds<=0.3) else 0.527-0.130/(d1/ds)
+        C1 = max(0, 1 - B/d_s);  C2 = min(1, B/d_s);  d1 = d_s - berm height above toe
+  F = h_s - d_s is the crest freeboard (negative for a submerged structure).
+
+Self-containment: zero sibling imports; embeds its own contract dataclasses, the Hunt
+(1979) dispersion solver, and the 5-2 runup methods. stdlib + numpy only. Runnable:
+    python chessqc_5_3_transmission_impermeable.py
+which runs the ACES-oracle self-tests (User's Guide Examples 1-4) and prints a tabulation.
+"""
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+import numpy as np
+
+G_SI = 9.80665
+_FT = 0.3048
+
+
+@dataclass(frozen=True)
+class AppMeta:
+    aces_id: str
+    name: str
+    area: str
+    classification: str
+    cite: str
+    default_system: str = "SI"
+    status: str = "Current"
+    superseded_by: str = ""
+
+
+@dataclass(frozen=True)
+class Field:
+    key: str
+    label: str
+    kind: str = "float"
+    unit_si: str = ""
+    unit_us: str = ""
+    default: object = 0.0
+    lo: float = -math.inf
+    hi: float = math.inf
+    choices: tuple = ()
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class Out:
+    key: str
+    label: str
+    unit_si: str = ""
+    unit_us: str = ""
+    kind: str = "scalar"
+
+
+APP_META = AppMeta(
+    aces_id="5-3",
+    name="Wave Transmission on Impermeable Structures",
+    area="Wave Runup, Transmission, and Overtopping",
+    classification="exact",
+    cite="Seelig (1980); Seelig (1976); Ahrens & McCartney (1975); Ahrens & Titus (1985)",
+    default_system="US",
+)
+
+# Default example = ACES User's Guide Example 3 (rough slope, runup + transmission).
+INPUTS = (
+    Field("Hi", "Incident wave height", "float", "m", "ft", default=7.50 * _FT, lo=1e-4, hi=1e3),
+    Field("T", "Wave period", "float", "s", "s", default=10.0, lo=1e-2, hi=1e3),
+    Field("ds", "Water depth at structure toe", "float", "m", "ft", default=10.0 * _FT,
+          lo=1e-3, hi=1e4),
+    Field("hs", "Structure height above toe", "float", "m", "ft", default=15.0 * _FT,
+          lo=1e-3, hi=1e4),
+    Field("B", "Structure crest width", "float", "m", "ft", default=7.50 * _FT, lo=0.0, hi=1e4),
+    Field("structure_type", "Structure type", "choice", default="Sloped",
+          choices=("Sloped", "Vertical or composite")),
+    # --- sloped-structure inputs ---
+    Field("cot_theta", "Cotangent of structure slope", "float", "", "", default=3.0,
+          lo=1e-3, hi=1e3, note="sloped structures"),
+    Field("slope_type", "Slope type", "choice", default="Rough (riprap)",
+          choices=("Rough (riprap)", "Smooth"), note="sloped structures"),
+    Field("a", "Rough-slope coefficient a", "float", "", "", default=0.956, lo=0.0, hi=10.0),
+    Field("b", "Rough-slope coefficient b", "float", "", "", default=0.398, lo=0.0, hi=10.0),
+    Field("R_known", "Known runup (0 = compute)", "float", "m", "ft", default=0.0, lo=0.0, hi=1e4),
+    # --- vertical/composite inputs ---
+    Field("berm_height", "Berm height above toe", "float", "m", "ft", default=0.0, lo=0.0, hi=1e4,
+          note="vertical/composite; 0 = no berm (pure vertical wall)"),
+)
+
+OUTPUTS = (
+    Out("R",    "Wave runup (sloped structures)",   "m", "ft", "scalar"),
+    Out("F",    "Crest freeboard (hs - ds)",        "m", "ft", "scalar"),
+    Out("K_TO", "Transmission coefficient",         "",  "",   "scalar"),
+    Out("H_T",  "Transmitted wave height",          "m", "ft", "scalar"),
+)
+
+
+@dataclass
+class Result:
+    R: float; F: float; K_TO: float; H_T: float
+    notes: str = ""
+
+
+_HUNT_D = (0.66667, 0.35550, 0.16084, 0.06320, 0.02174,
+           0.00654, 0.00171, 0.00039, 0.00011)
+
+
+def wave_length(T: float, d: float, g: float = G_SI) -> float:
+    omega = 2.0 * math.pi / T
+    y = omega * omega * d / g
+    denom = 1.0 + sum(dn * y ** (n + 1) for n, dn in enumerate(_HUNT_D))
+    c2 = g * d / (y + 1.0 / denom)
+    return math.sqrt(c2) * T
+
+
+def _validate(inp: dict) -> None:
+    for f in INPUTS:
+        if f.kind not in ("float", "int", "angle"):
+            continue
+        v = float(inp[f.key])
+        if not (f.lo <= v <= f.hi):
+            raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
+
+
+def _runup(slope_type, Hi, T, ds, cot_theta, a, b, g):
+    """Runup R via the 5-2 methods (rough Ahrens & McCartney; smooth Ahrens & Titus)."""
+    theta = math.atan(1.0 / cot_theta)
+    L0 = g * T * T / (2.0 * math.pi)
+    xi = math.tan(theta) / math.sqrt(Hi / L0)
+    if slope_type.startswith("Rough"):
+        return Hi * a * xi / (1.0 + b * xi)
+    L = wave_length(T, ds, g)
+    Pi = (Hi / L) / math.tanh(2.0 * math.pi * ds / L) ** 3
+    Cp = 1.002 * xi
+    Cnb = 1.087 * math.sqrt(math.pi / (2.0 * theta)) + 0.775 * Pi
+    if xi <= 2.0:
+        C = Cp
+    elif xi >= 3.5:
+        C = Cnb
+    else:
+        C = ((3.5 - xi) / 1.5) * Cp + ((xi - 2.0) / 1.5) * Cnb
+    return C * Hi
+
+
+def compute(inp: dict, *, g: float = G_SI) -> Result:
+    """Transmitted wave height for SI inputs (see INPUTS)."""
+    _validate(inp)
+    Hi = float(inp["Hi"]); T = float(inp["T"]); ds = float(inp["ds"])
+    hs = float(inp["hs"]); B = float(inp["B"])
+    structure_type = str(inp["structure_type"])
+    F = hs - ds
+    R = 0.0
+    notes = []
+
+    if structure_type == "Sloped":
+        slope_type = str(inp["slope_type"]); cot_theta = float(inp["cot_theta"])
+        a = float(inp["a"]); b = float(inp["b"]); R_known = float(inp["R_known"])
+        R = R_known if R_known > 0.0 else _runup(slope_type, Hi, T, ds, cot_theta, a, b, g)
+        C = 0.51 - 0.11 * (B / hs)
+        K_TO = C * (1.0 - F / R)
+        K_TO = min(max(K_TO, 0.0), 1.0)
+        notes.append(f"sloped (Seelig 1980); C = {C:.3f}, R = {R / _FT:.2f} ft")
+    else:
+        berm = float(inp["berm_height"])
+        Bds = B / ds
+        d1 = ds - berm                                  # depth above berm (= ds if no berm)
+        d1ds = d1 / ds
+        alpha = 1.8 + 0.4 * min(Bds, 1.0)
+        beta1 = 0.1 + 0.3 * min(Bds, 1.0)
+        beta2 = 0.1 if d1ds <= 0.3 else (0.527 - 0.130 / d1ds)
+        C1 = max(0.0, 1.0 - Bds); C2 = min(1.0, Bds)
+        beta = C1 * beta1 + C2 * beta2
+        FHi = F / Hi
+        if FHi <= -(alpha + beta):
+            K_TO = 1.0
+        elif FHi >= (alpha - beta):
+            K_TO = 0.0
+        else:
+            K_TO = 0.5 * (1.0 - math.sin((math.pi / (2.0 * alpha)) * (FHi + beta)))
+        if not (0.145 <= ds / Hi <= 0.5):
+            notes.append("note: ds/Hi outside Seelig (1976) validity (0.145 to 0.5)")
+        notes.append(f"vertical/composite (Seelig 1976); alpha={alpha:.3f}, beta={beta:.3f}")
+
+    H_T = K_TO * Hi
+    return Result(R=R, F=F, K_TO=K_TO, H_T=H_T, notes="; ".join(notes))
+
+
+# --- self-tests (ACES User's Guide Examples 1-4) --------------------------------
+def _approx(a, b, tol):
+    return abs(a - b) <= tol
+
+
+def _self_tests() -> None:
+    g = G_SI
+
+    def ft(x): return x / _FT
+
+    # Ex 1: sloped, known runup R = 15 ft -> H_T = 2.275 ft
+    r1 = compute(dict(Hi=7.50 * _FT, T=10.0, ds=10.0 * _FT, hs=15.0 * _FT, B=7.50 * _FT,
+                      structure_type="Sloped", slope_type="Rough (riprap)", cot_theta=3.0,
+                      a=0.956, b=0.398, R_known=15.0 * _FT, berm_height=0.0), g=g)
+    assert _approx(ft(r1.H_T), 2.275, 0.01), ft(r1.H_T)
+
+    # Ex 2: vertical wall with submerged berm -> H_T = 3.798 ft
+    r2 = compute(dict(Hi=7.50 * _FT, T=4.50, ds=20.0 * _FT, hs=17.50 * _FT, B=12.0 * _FT,
+                      structure_type="Vertical or composite", cot_theta=3.0,
+                      slope_type="Rough (riprap)", a=0.956, b=0.398, R_known=0.0,
+                      berm_height=6.0 * _FT), g=g)
+    assert _approx(ft(r2.H_T), 3.798, 0.01), ft(r2.H_T)
+
+    # Ex 3: rough slope, computed runup -> R = 9.421, H_T = 1.601 ft
+    r3 = compute(dict(Hi=7.50 * _FT, T=10.0, ds=10.0 * _FT, hs=15.0 * _FT, B=7.50 * _FT,
+                      structure_type="Sloped", slope_type="Rough (riprap)", cot_theta=3.0,
+                      a=0.956, b=0.398, R_known=0.0, berm_height=0.0), g=g)
+    assert _approx(ft(r3.R), 9.421, 0.01) and _approx(ft(r3.H_T), 1.601, 0.01), (ft(r3.R), ft(r3.H_T))
+
+    # Ex 4: smooth slope, computed runup -> R = 22.436, H_T = 2.652 ft
+    r4 = compute(dict(Hi=7.50 * _FT, T=10.0, ds=10.0 * _FT, hs=15.0 * _FT, B=7.50 * _FT,
+                      structure_type="Sloped", slope_type="Smooth", cot_theta=3.0,
+                      a=0.956, b=0.398, R_known=0.0, berm_height=0.0), g=g)
+    assert _approx(ft(r4.R), 22.436, 0.02) and _approx(ft(r4.H_T), 2.652, 0.01), (ft(r4.R), ft(r4.H_T))
+
+    print("  self-tests: PASS (ACES Examples 1-4: sloped known/rough/smooth + vertical-composite)")
+
+
+def _print_default_example() -> None:
+    inp = {f.key: f.default for f in INPUTS}
+    r = compute(inp)
+    print(f"\nACES application {APP_META.aces_id} - {APP_META.name}  [{APP_META.classification}]")
+    print(f"  cite: {APP_META.cite}")
+    print("  (default = User's Guide Example 3: rough slope, runup + transmission)")
+    print(f"    runup R = {r.R/_FT:.3f} ft   freeboard F = {r.F/_FT:.2f} ft")
+    print(f"    transmission coeff K_TO = {r.K_TO:.4f}   transmitted height H_T = {r.H_T/_FT:.3f} ft")
+    print(f"  notes: {r.notes}")
+
+
+if __name__ == "__main__":
+    print(f"CHESS-QC {APP_META.aces_id} {APP_META.name} - running self-tests...")
+    _self_tests()
+    _print_default_example()

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHESS-QC — Quick Compute</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="_prefs.js"></script>
+  <script src="theme.js"></script>
+  <script src="apps.js"></script>
+</head>
+<body>
+  <header>
+    <span class="title">CHESS-QC</span>
+    <span class="muted">Quick Compute · coastal engineering applications</span>
+    <span class="spacer"></span>
+    <label class="muted" id="modeLbl" for="modeToggle"></label>
+    <label class="switch" title="Switch Light/Dark mode">
+      <input type="checkbox" id="modeToggle"><span class="track"></span><span class="thumb"></span>
+    </label>
+  </header>
+  <div id="hub" class="hub"></div>
+  <div id="status"></div>
+
+  <script>
+    // Fidelity classification -> compact badge letter (A exact, B standard, C provisional).
+    const CLASS_LETTER = { exact: "A", standard: "B", provisional: "C" };
+    const classLetter = (c) => CLASS_LETTER[c] || c || "";
+    const hub = document.getElementById("hub");
+    const byArea = {};
+    for (const a of CHESSQC_APPS) (byArea[a.area] ||= []).push(a);
+    const order = CHESSQC_AREAS.filter((x) => x in byArea)
+      .concat(Object.keys(byArea).filter((x) => !CHESSQC_AREAS.includes(x)));
+    if (!CHESSQC_APPS.length) hub.innerHTML = "<p>No applications registered in apps.js.</p>";
+    for (const area of order) {
+      const sec = document.createElement("fieldset");
+      sec.innerHTML = `<legend>${area}</legend>`;
+      const grid = document.createElement("div");
+      grid.className = "hub-grid";
+      const ai = CHESSQC_AREAS.indexOf(area);          // 0-based area index -> --area-N
+      for (const a of byArea[area].sort((x, y) => x.id.localeCompare(y.id))) {
+        const card = document.createElement("a");
+        card.className = "app-card";
+        card.href = `calc.html?app=${encodeURIComponent(a.id)}`;
+        card.style.borderLeft = `5px solid var(--area-${ai >= 0 ? ai + 1 : 1})`;
+        card.innerHTML = `<span class="aid">${a.id}</span> ${a.name}
+                          <span class="badge cls-${classLetter(a.classification).toLowerCase()}" title="${a.classification}">${classLetter(a.classification)}</span>`;
+        grid.appendChild(card);
+      }
+      sec.appendChild(grid);
+      hub.appendChild(sec);
+    }
+    document.getElementById("status").textContent =
+      `${CHESSQC_APPS.length} application(s) available`;
+
+    // Light/Dark toggle switch (persists for this launch; calc pages pick it up on navigation)
+    const mt = document.getElementById("modeToggle"), ml = document.getElementById("modeLbl");
+    const syncMode = () => {
+      const dark = CHESSQCUI.currentMode() === "Dark";
+      mt.checked = dark; ml.textContent = dark ? "Dark mode" : "Light mode";
+    };
+    mt.addEventListener("change", () => { CHESSQCUI.toggleMode(); syncMode(); });
+    syncMode();
+  </script>
+</body>
+</html>
