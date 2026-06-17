@@ -84,9 +84,14 @@
 
   <script>
     // Version/release tag superscript on the wordmark (launcher-set; "" hides it).
+    const prefs = window.CHESSQC_PREFS || {};
     const verTag = document.getElementById("verTag");
-    const tag = (window.CHESSQC_PREFS || {}).tag;
-    if (tag) verTag.textContent = tag; else verTag.remove();
+    if (prefs.tag) {
+      verTag.textContent = prefs.tag;
+      if (prefs.tag_size) verTag.style.fontSize = prefs.tag_size + "em";
+    } else {
+      verTag.remove();
+    }
 
     // Functional-areas overview, built from the same registry the selection page uses.
     const byArea = {};
