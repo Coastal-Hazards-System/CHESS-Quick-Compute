@@ -224,7 +224,7 @@ def _self_tests() -> None:
     for name, exp in {"FT-I": 0.9813, "Weibull k=0.75": 0.9414, "Weibull k=1.00": 0.9674,
                       "Weibull k=1.40": 0.9818, "Weibull k=2.00": 0.9866}.items():
         assert _approx(by[name]["corr"], exp, 2e-3), (name, by[name]["corr"])
-    # return-period heights (manual shown in ft; we fit in m -> compare m vs ft*0.3048)
+    # return-period heights (manual shown in ft; fit in m -> compare m vs ft*0.3048)
     ft_FTI = {2: 15.94, 5: 21.50, 10: 25.18, 25: 29.84, 50: 33.29, 100: 36.72}
     ft_W2 = {2: 15.86, 5: 22.02, 10: 25.53, 25: 29.44, 50: 32.03, 100: 34.40}
     for Tr, ftval in ft_FTI.items():

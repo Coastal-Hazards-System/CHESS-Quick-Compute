@@ -31,7 +31,7 @@ Air-sea temperature (stability) correction, default Neutral; physical correction
   psi_m: it shares the two log terms but has +2 atan - pi/2 where the canonical form has
   -2 atan + pi/2, plus spurious 1 - phi_a - 3 ln(phi_a) terms (verified against Paulson
   1970, J. Appl. Meteor. 9:857, and the standard form ln[(1+x^2)(1+x)^2/8] - 2 atan x +
-  pi/2). We use the canonical psi_m. But the ACES examples still cannot be reproduced:
+  pi/2). The canonical psi_m is used here. The ACES examples still cannot be reproduced:
   Example 3 (overwater, deltaT=-3) reports U_e = 44.00 mph, a -3.2% drop from the neutral
   45.5, whereas correct surface-layer physics gives only ~-0.9% AND the OPPOSITE sign
   (deltaT<0 is unstable -> a small increase). The -3.2% is both ~3-6x too large and wrong-

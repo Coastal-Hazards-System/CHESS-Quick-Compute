@@ -240,7 +240,7 @@ def _self_tests() -> None:
     g = G_SI
     # ACES User's Guide Example 1-2 (US units): Hmo=5 ft, Tp=6.30 s, d=10.2 ft.
     # Four of the five characteristic heights reproduce to < 1.5%. H_1/10 (manual 6.55 ft)
-    # is an outlier: our principled Beta-Rayleigh value is 6.30 ft, and the manual figure
+    # is an outlier: the principled Beta-Rayleigh value is 6.30 ft, and the manual figure
     # is physically inconsistent with its neighbours (closer to the Rayleigh value than the
     # more-truncated H_1/3 and H_1/100), so it is treated as a documentation artifact.
     r = compute({"Hmo": 5.0 * _FT, "Tp": 6.30, "d": 10.20 * _FT, "Hb_coef": "0.9 (ACES)"}, g=g)

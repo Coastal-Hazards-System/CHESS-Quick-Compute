@@ -5,8 +5,8 @@ This is the engineering reference for the CHESS-QC (Quick Compute) toolkit. It e
 each application computes, the physics behind it, the assumptions it rests on, where it is
 still the right tool, and where a newer method should be preferred.
 
-It is a from-scratch rewrite. The governing relationships are re-expressed in our own notation
-and explained in our own words, drawn from the classical literature (Airy, Stokes,
+It is a from-scratch rewrite. The governing relationships are re-expressed in a consistent notation
+and described from the classical literature (Airy, Stokes,
 Korteweg and de Vries, Isobe, Fenton, Hudson, Bodine, Holland, and others) rather than copied
 from any single source.
 
@@ -107,7 +107,7 @@ by numerically integrating the fitted density.
 > (`d/(gT_p²) ≲ 0.01`); outside it the result reverts to pure Rayleigh. Results depend on the
 > chosen breaking-height rule (`0.78 d` versus the ACES-preferred `0.9 d`) and on the empirical
 > rms/rmq fits, so treat the tail heights (`H_1/100`) as estimates. One transcription point: the
-> relative-depth fit in our equation notes was recorded with the argument inverted; reproducing
+> relative-depth fit in the equation notes was recorded with the argument inverted; reproducing
 > the worked example requires `g T_p² / d`, not `d / (g T_p²)`.
 
 **Validation.** Reproduces ACES *User's Guide* Example 1-2 (`H_mo = 5 ft, T_p = 6.30 s,
@@ -222,7 +222,7 @@ conditions close the problem: no flow through the bed, and two conditions at the
 (the surface moves with the fluid, and the pressure there is atmospheric). For small waves those
 surface conditions are linearized about `z = 0`, and the solution is a single sinusoid.
 
-**Key relationships (our notation).**
+**Key relationships (notation used here).**
 
 - Dispersion, the link between speed and length:
   ```
@@ -270,7 +270,7 @@ the complete elliptic integrals `K(κ)` and `E(κ)`. As `κ` goes to 0 it collap
 theory; as `κ` goes to 1 the crest spacing grows without bound and it approaches a single
 solitary wave.
 
-**Key relationships (our notation).** A perturbation parameter `ε = H/d` and the modulus `κ` are
+**Key relationships (notation used here).** A perturbation parameter `ε = H/d` and the modulus `κ` are
 fixed by the first-order dispersion relation:
 ```
 16 κ² K(κ)² / 3 = g H T² / d²
@@ -286,7 +286,7 @@ not breaking amplitude. Best for `U_r` above about 26.
 
 > **Status and Caveats:** Current. This is the correct theory for nonlinear shallow-water waves
 > and the natural companion to 2-1. Two things to know.
-> (1) Transcription correction (carried in our equation ledger): the original Technical
+> (1) Transcription correction (carried in the equation ledger): the original Technical
 > Reference's two vertical-acceleration expressions lost the squares on their trigonometric
 > factors. CHESS-QC computes those accelerations by analytic differentiation of the correct
 > velocity field, which both regenerates the correctly-printed equations and fixes the error,
@@ -319,7 +319,7 @@ wave-height and mean-level constraints. This yields a square system of nonlinear
 solved by Newton iteration, made robust by wave-height ramping: the height is raised in steps so
 each solve starts near the previous answer, avoiding divergence near breaking.
 
-**Key relationships (our notation).** The unknowns are gathered into one vector and the system
+**Key relationships (notation used here).** The unknowns are gathered into one vector and the system
 `F(z) = 0` (free-surface kinematic and dynamic conditions at each collocation point, plus
 height, mean-zero, and the celerity or current condition) is driven to zero. CHESS-QC uses a
 compact non-dimensional form (scaling by depth and `√(gd)`) with a finite-difference Jacobian and
@@ -1100,7 +1100,7 @@ Myers (1954), which is exactly the Holland model with shape factor `B = 1`. The 
 radius follows from gradient-wind balance on the chosen pressure profile, reduced to the surface
 and given a forward-speed asymmetry and an inflow angle.
 
-**Key relationships (our notation).**
+**Key relationships (notation used here).**
 
 - Pressure profile: `p(r) = P_c + ΔP exp(-(R/r)^B)`, with `B = 1` recovering Myers.
 - Gradient wind: `V(r) = sqrt( (B ΔP / ρ_a)(R/r)^B exp(-(R/r)^B) + (r f / 2)² ) - r f / 2`.
