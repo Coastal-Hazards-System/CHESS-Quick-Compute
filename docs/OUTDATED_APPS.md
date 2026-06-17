@@ -6,4 +6,4 @@ These tools remain available (often valuable for screening, teaching, or consist
 | App | Name | Area | Status | Preferred / newer method |
 | --- | --- | --- | --- | --- |
 | 4-1 | Breakwater Design (Hudson) | Structural Design | Current | Van der Meer (1988) stability formulae (preferred for many cases) |
-| 9-1 | Bathystrophic Storm Surge | Storm Surge | Screening only | ADCIRC (operational forecasting) |
+| 9-1 | Bathystrophic Storm Surge | Storm Surge | Screening only | ADCIRC (risk assessment) |

@@ -80,7 +80,7 @@ APP_META = AppMeta(
     cite="Bodine (1971) TM-35; Holland (1980); Myers (1954); TR/CERC",
     default_system="US",
     status="Screening only",
-    superseded_by="ADCIRC (operational forecasting)",
+    superseded_by="ADCIRC (risk assessment)",
 )
 
 _WIND_MODELS = ("Holland (1980)", "Myers / Bodine (1954)")
