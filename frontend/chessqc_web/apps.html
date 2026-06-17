@@ -89,7 +89,10 @@
       setStatus();
     };
     search.addEventListener("input", applyFilter);
-    setStatus();
+    // honor ?area=<name> from the landing page: pre-fill the search box with that area
+    const areaParam = new URLSearchParams(location.search).get("area");
+    if (areaParam) search.value = areaParam;
+    applyFilter();   // applies the filter (or shows all) and sets the count
 
     CHESSQCUI.wireToggle("modeToggle", "modeLbl");
   </script>
