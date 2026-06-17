@@ -16,6 +16,7 @@
   /* per functional-area card colors (Vibrant) */
   --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
   --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
+  --area-9: #6a4ec2; --area-10: #b83280;
 }
 html[data-theme="dark"] {
   --bg: #0b1316; --fg: #eaf2f3; --panel: #121d21; --border: #243035;
@@ -28,6 +29,7 @@ html[data-theme="dark"] {
   /* per functional-area card colors (Original) */
   --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #a9805a;
   --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #7de39a;
+  --area-9: #9a86e0; --area-10: #d97bb5;
 }
 
 /* ---- vibe tokens (style) ---- */
