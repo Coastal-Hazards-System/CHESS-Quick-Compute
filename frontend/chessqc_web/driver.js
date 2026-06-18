@@ -15,7 +15,7 @@ const classLetter = (c) => CLASS_LETTER[c] || c || "";
 const TO_SI = {
   "": 1, "m": 1, "ft": 0.3048, "km": 1000, "mi": 1609.344, "nm": 1852, "hr": 3600,
   "mph": 0.44704, "kt": 0.514444, "C": 1, "hPa": 100, "mb": 100, "inHg": 3386.389,
-  "s": 1, "m/s": 1, "ft/s": 0.3048,
+  "s": 1, "m/s": 1, "km/h": 1000 / 3600, "ft/s": 0.3048,
   "m/s^2": 1, "ft/s^2": 0.3048, "Pa": 1, "psf": 47.880259,
   "N/m": 1, "lb/ft": 14.593903, "N/s": 1, "lb/s": 4.4482216, "deg": 1, "rad": 1,
   "%": 1, "N/m^3": 1, "kN/m^3": 1000, "lb/ft^3": 157.08746,
@@ -66,8 +66,11 @@ const fmtIn = (x) => {
   return String(+x.toPrecision(6));
 };
 
-const fieldUnit = (fld) => (system === "SI" ? fld.unit_si : fld.unit_us);
-const outUnit = (o) => (system === "SI" ? o.unit_si : o.unit_us);
+// SI metric speed display is launcher-configurable (m/s or km/h); default km/h.
+const speedSI = () => ((window.CHESSQC_PREFS || {}).speed_si === "m/s" ? "m/s" : "km/h");
+const siUnit = (u) => (u === "m/s" ? speedSI() : u);
+const fieldUnit = (fld) => (system === "SI" ? siUnit(fld.unit_si) : fld.unit_us);
+const outUnit = (o) => (system === "SI" ? siUnit(o.unit_si) : o.unit_us);
 
 async function boot() {
   try {
@@ -220,7 +223,7 @@ function buildForm() {
 const tableCols = (fld) => (fld.columns && fld.columns.length)
   ? fld.columns.map((c) => ({ label: c[0], si: c[1], us: c[2] }))
   : [{ label: fld.label, si: fld.unit_si, us: fld.unit_us }];
-const colUnit = (c) => (system === "SI" ? c.si : c.us);
+const colUnit = (c) => (system === "SI" ? siUnit(c.si) : c.us);
 
 function addTableRow(wrap, rowSI) {
   const tb = wrap.querySelector("tbody"), tr = document.createElement("tr");

@@ -11,6 +11,8 @@ from .theme import THEMES, DEFAULT_THEME, VIBES, DEFAULT_VIBE, BADGE_STYLES, DEF
 _ORG, _APP = "CHESS-QC", "QuickCompute"
 DEFAULT_DECIMALS = 2
 UNIT_CHOICES = ("SI", "US")
+SPEED_CHOICES = ("m/s", "km/h")     # SI metric display unit for m/s quantities
+DEFAULT_SPEED = "km/h"
 
 
 def _store() -> "QtCore.QSettings":
@@ -69,3 +71,14 @@ def get_units(default: str = "SI") -> str:
 def set_units(u: str) -> None:
     if u in UNIT_CHOICES:
         _store().setValue("units", u)
+
+
+def get_speed_si(default: str = DEFAULT_SPEED) -> str:
+    """Launcher-set SI metric display unit for m/s quantities (m/s or km/h)."""
+    s = _store().value("speed_si", default)
+    return s if s in SPEED_CHOICES else default
+
+
+def set_speed_si(s: str) -> None:
+    if s in SPEED_CHOICES:
+        _store().setValue("speed_si", s)

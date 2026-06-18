@@ -48,6 +48,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         # launcher-set units (DEFAULT_UNITS) take precedence; else the app's own default
         self.system = settings.get_units(getattr(self.meta, "default_system", "SI"))
         self.decimals = settings.get_decimals()
+        self._speed_si = settings.get_speed_si()   # SI metric unit for m/s quantities (m/s|km/h)
         self._vibe_opts = vibe_label_opts(settings.get_vibe())
         self._widgets: dict[str, QtWidgets.QWidget] = {}
         self._value_labels: dict[str, QtWidgets.QLabel] = {}
@@ -84,11 +85,15 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             QtCore.QTimer.singleShot(0, self.close)
 
     # ---- field unit helpers ----
+    def _si_unit(self, u: str) -> str:
+        """Substitute the launcher-chosen SI speed unit (m/s|km/h) for m/s quantities."""
+        return self._speed_si if u == "m/s" else u
+
     def _unit(self, f) -> str:
-        return f.unit_si if self.system == "SI" else f.unit_us
+        return self._si_unit(f.unit_si) if self.system == "SI" else f.unit_us
 
     def _out_unit(self, o) -> str:
-        return o.unit_si if self.system == "SI" else o.unit_us
+        return self._si_unit(o.unit_si) if self.system == "SI" else o.unit_us
 
     def _fmt(self, x: float) -> str:
         """Fixed-decimal display (kills the '-0.00' artifact)."""
@@ -293,7 +298,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
     def _table_headers(self, tbl, cols, system):
         heads = []
         for lab, usi, uus in cols:
-            u = usi if system == "SI" else uus
+            u = self._si_unit(usi) if system == "SI" else uus
             heads.append(f"{lab} ({u})" if u else lab)
         tbl.setHorizontalHeaderLabels(heads)
         tbl.horizontalHeader().setStretchLastSection(True)
@@ -302,7 +307,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         tbl.setRowCount(len(rows_si))
         for r, row in enumerate(rows_si):
             for c, (lab, usi, uus) in enumerate(cols):
-                u = usi if system == "SI" else uus
+                u = self._si_unit(usi) if system == "SI" else uus
                 si = float(row[c]) if c < len(row) else 0.0
                 tbl.setItem(r, c, QtWidgets.QTableWidgetItem(self._fmt(units.from_si(si, u))))
 
@@ -345,7 +350,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                     vals.append(0.0)
                 else:
                     blank = False
-                    u = usi if self.system == "SI" else uus
+                    u = self._si_unit(usi) if self.system == "SI" else uus
                     vals.append(units.to_si(float(txt), u))
             if not blank:
                 rows.append(vals)
@@ -539,8 +544,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                     for c, (lab, usi, uus) in enumerate(cols):
                         it = tbl.item(r, c)
                         if it and it.text().strip():
-                            old_u = usi if old == "SI" else uus
-                            new_u = usi if new == "SI" else uus
+                            old_u = self._si_unit(usi) if old == "SI" else uus
+                            new_u = self._si_unit(usi) if new == "SI" else uus
                             si = units.to_si(float(it.text()), old_u)
                             it.setText(self._fmt(units.from_si(si, new_u)))
                 self._table_headers(tbl, cols, new)

@@ -12,7 +12,7 @@ TO_SI = {
     # time
     "s": 1.0, "hr": 3600.0,
     # velocity
-    "m/s": 1.0, "ft/s": 0.3048, "mph": 0.44704, "kt": 0.514444,
+    "m/s": 1.0, "km/h": 1000.0 / 3600.0, "ft/s": 0.3048, "mph": 0.44704, "kt": 0.514444,
     # temperature difference (no scale change between C and K)
     "C": 1.0,
     # atmospheric pressure (canonical Pa)
