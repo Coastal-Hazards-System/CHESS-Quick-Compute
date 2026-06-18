@@ -9,6 +9,10 @@ Classification: exact (Hudson 1958 / Ahrens 1981 / van der Meer 1988 / Ahrens & 
 1988 -- all coefficients known from the named sources, nothing guessed; reproduces the
 User's Guide example: W_50 to ~0.5% [a rounded Rayleigh H1/10:Hs factor], runup and
 gradation ratios exact).
+A selectable EurOtop (2018) Ru2% runup method is also provided (the current European
+standard, with a roughness factor gamma_f); Ahrens & Heimbaugh stays the default so the
+Example reproduction is preserved. The EurOtop path is validated for physical limits and
+ordering (no ACES oracle exists for it).
 Theory and references (TR chapter 4-4, eqs 1-24 in docs/EQUATIONS.md):
   - armor weight (Hudson 1958 form):  W_50 = w_r * H_s^3 / (N_s^3 (S_r-1)^3)        (1)
   - stability number N_s = larger of two methods:
@@ -98,6 +102,11 @@ INPUTS = (
           note="0.1 impermeable core, 0.4-0.5 permeable, 0.6 homogeneous (Fig 4-4-2)"),
     Field("S", "Damage level", "float", "", "", default=2.0, lo=1.0, hi=20.0,
           note="van der Meer damage S (Table 4-4-1)"),
+    Field("runup_method", "Runup method", "choice", "", "", default="Ahrens-Heimbaugh",
+          choices=("Ahrens-Heimbaugh", "EurOtop"),
+          note="Ahrens & Heimbaugh 1988 (ACES) or EurOtop 2018 Ru2% (modern standard)"),
+    Field("gamma_f", "Roughness factor (EurOtop)", "float", "", "", default=0.55, lo=0.3, hi=1.0,
+          note="EurOtop only: ~0.40 permeable rock, 0.55 impermeable rock, 1.0 smooth"),
 )
 
 OUTPUTS = (
@@ -138,7 +147,7 @@ def _validate(inp: dict) -> None:
     for f in INPUTS:
         if f.kind not in ("float", "int", "angle"):
             continue
-        v = float(inp[f.key])
+        v = float(inp.get(f.key, f.default))    # optional EurOtop inputs fall back to defaults
         if not (f.lo <= v <= f.hi):
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
@@ -177,6 +186,24 @@ def _runup(Hs, Ts, ds, cot_theta, g):
     return rmax(1.022, 0.247), rmax(1.286, 0.247)
 
 
+def _runup_eurotop(Hs, Ts, ds, cot_theta, gamma_f, g):
+    """EurOtop (2018) 2% runup (eqs 5.1/5.2), head-on with no berm (gamma_b = gamma_beta = 1).
+    Uses H_m0 (depth-/steepness-limited, as in _runup) and the spectral period T_m-1,0 = T_p/1.1.
+    Returns (mean Ru2%, design Ru2% = mean + ~1 sigma) to fill the expected/conservative slots."""
+    tan_th = 1.0 / cot_theta
+    Tp = Ts / 0.80
+    Lp = wave_length(Tp, ds, g)
+    Hmo = min(0.10 * Lp * math.tanh(2.0 * math.pi * ds / Lp),
+              Hs / math.exp(0.00089 * (ds / (g * Tp * Tp)) ** (-0.834)))
+    Tm10 = Tp / 1.1                                                        # spectral period
+    xi = tan_th / math.sqrt(2.0 * math.pi * Hmo / (g * Tm10 * Tm10))       # surf-similarity
+    cap_mean = gamma_f * (4.0 - 1.5 / math.sqrt(xi))                       # surging maximum (mean)
+    cap_des = gamma_f * (4.3 - 1.5 / math.sqrt(xi))                        # surging maximum (design, +1 sigma)
+    ru_mean = Hmo * min(1.65 * gamma_f * xi, cap_mean)
+    ru_design = Hmo * min(1.75 * gamma_f * xi, cap_des)                    # mean + ~1 sigma
+    return ru_mean, ru_design
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Revetment armor/filter sizing and runup for SI inputs."""
     _validate(inp)
@@ -197,10 +224,17 @@ def compute(inp: dict, *, g: float = G_SI) -> Result:
     r_armor = 2.0 * (W50 / wr) ** (1.0 / 3.0)
     r_filter = max(r_armor / 4.0, 1.0 * _FT)
 
-    R_exp, R_cons = _runup(Hs, Ts, ds, cot_theta, g)
+    runup_method = str(inp.get("runup_method", "Ahrens-Heimbaugh"))
+    if runup_method == "EurOtop":
+        R_exp, R_cons = _runup_eurotop(Hs, Ts, ds, cot_theta, float(inp.get("gamma_f", 0.55)), g)
+        runup_note = f"EurOtop 2018 Ru2% (gamma_f={float(inp.get('gamma_f', 0.55))})"
+    else:
+        R_exp, R_cons = _runup(Hs, Ts, ds, cot_theta, g)
+        runup_note = "Ahrens & Heimbaugh 1988"
 
     notes = (f"N_s={N_s:.3f} (CERC {N_cerc:.3f}, vdM {N_vdm:.3f}; "
-             f"{'CERC' if N_cerc >= N_vdm else 'van der Meer'} governs); xi_z={xi_z:.2f}")
+             f"{'CERC' if N_cerc >= N_vdm else 'van der Meer'} governs); xi_z={xi_z:.2f}; "
+             f"runup: {runup_note}")
     return Result(N_s=N_s, W50=W50, D50=D50, r_armor=r_armor, r_filter=r_filter,
                   W15=W15, W85=W85, Wmax=Wmax, Wmin=Wmin,
                   R_expected=R_exp, R_conservative=R_cons, notes=notes)
@@ -232,6 +266,12 @@ def _self_tests() -> None:
     # runup reproduces the oracle exactly
     assert _approx(ft(r.R_expected), 10.96, 0.02), ft(r.R_expected)
     assert _approx(ft(r.R_conservative), 13.79, 0.02), ft(r.R_conservative)
+    # EurOtop (2018) runup: selectable; sane, ordered, and lower than the rough Ahrens values
+    eo = compute({"Hs": 5.0 * _FT, "Ts": 10.0, "ds": 9.0 * _FT, "cot_theta": 2.0,
+                  "wr": 165.0 * _LBFT3, "P": 0.1, "S": 2.0, "runup_method": "EurOtop"}, g=g)
+    assert eo.R_conservative > eo.R_expected > 0, (ft(eo.R_expected), ft(eo.R_conservative))
+    assert 0.0 < ft(eo.R_expected) < ft(r.R_conservative), ft(eo.R_expected)  # rough rock reduces runup
+    assert eo.W50 == r.W50          # runup method does not affect armor sizing
     print(f"  self-tests: PASS (W50={lb(r.W50):.1f} lb, armor {ft(r.r_armor):.2f} ft, "
           f"runup {ft(r.R_expected):.2f}/{ft(r.R_conservative):.2f} ft)")
 

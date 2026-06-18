@@ -833,6 +833,8 @@ Originating ACES grouping: 4-4 "Rubble-Mound Revetment Design" (functional area:
 | Unit weight of rock | wr | lb/ft^3 / N/m^3 | 6.36588 to 318.294 | 165 |  |
 | Permeability coefficient | P | (none) | 0.1 to 0.6 | 0.1 | 0.1 impermeable core, 0.4-0.5 permeable, 0.6 homogeneous (Fig 4-4-2) |
 | Damage level | S | (none) | 1 to 20 | 2 | van der Meer damage S (Table 4-4-1) |
+| Runup method | runup_method | (none) | choices: Ahrens-Heimbaugh, EurOtop | Ahrens-Heimbaugh | Ahrens & Heimbaugh 1988 (ACES) or EurOtop 2018 Ru2% (modern standard) |
+| Roughness factor (EurOtop) | gamma_f | (none) | 0.3 to 1 | 0.55 | EurOtop only: ~0.40 permeable rock, 0.55 impermeable rock, 1.0 smooth |
 
 **Outputs**
 
