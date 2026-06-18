@@ -97,7 +97,7 @@ function buildAppSelect() {
   const sel = $("appSelect");
   if (!sel) return;
   const byArea = {};
-  for (const a of CHESSQC_APPS) (byArea[a.area] ||= []).push(a);
+  for (const a of CHESSQC_APPS) { if (a.comingSoon) continue; (byArea[a.area] ||= []).push(a); }
   const order = CHESSQC_AREAS.filter((x) => x in byArea)
     .concat(Object.keys(byArea).filter((x) => !CHESSQC_AREAS.includes(x)));
   sel.innerHTML = "";
@@ -122,6 +122,7 @@ function buildAppSelect() {
 async function loadApp(id) {
   const entry = CHESSQC_APPS.find((a) => a.id === id);
   if (!entry) { fail(`unknown app '${id}'`); return; }
+  if (entry.comingSoon) { fail(`${id} ${entry.name} is coming soon`); return; }
   setStatus(`loading ${id}…`, true);
   const appSrc = await (await fetch(entry.src)).text();
   // load numpy only when the app imports it; stdlib-only apps skip it (faster)

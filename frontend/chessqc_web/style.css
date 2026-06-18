@@ -29,7 +29,7 @@ html[data-theme="dark"] {
   --plot-eta: #0a82a2; --plot-u: #0a82a2;
   --area-1: #0a82a2; --area-2: #587836; --area-3: #cbb07e; --area-4: #7c5c3e;
   --area-5: #bc2614; --area-6: #0e9cbe; --area-7: #a98c5b; --area-8: #415a28;
-  --area-9: #6a4ca8; --area-10: #b83280;
+  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #5a6673;
 }
 html[data-palette="original"][data-theme="dark"] {                     /* Original - Dark */
   --accent: #2bb8d4; --accent-hover: #5bcee2; --on-accent: #06222a; --danger: #e5654f;
@@ -37,7 +37,7 @@ html[data-palette="original"][data-theme="dark"] {                     /* Origin
   --plot-eta: #2bb8d4; --plot-u: #2bb8d4;
   --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #9a7b5c;
   --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #74974f;
-  --area-9: #9a86d4; --area-10: #d97bb5;
+  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #93a0ad;
 }
 html[data-palette="vibrant"][data-theme="light"] {                    /* Vibrant - Light */
   --accent: #008cb0; --accent-hover: #007393; --on-accent: #ffffff; --danger: #e5210a;
@@ -45,7 +45,7 @@ html[data-palette="vibrant"][data-theme="light"] {                    /* Vibrant
   --plot-eta: #008cb0; --plot-u: #008cb0;
   --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
   --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
-  --area-9: #6a4ca8; --area-10: #b83280;
+  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #5a6673;
 }
 html[data-palette="vibrant"][data-theme="dark"] {                     /* Vibrant - Dark */
   --accent: #1ad2ec; --accent-hover: #5be4f4; --on-accent: #03222a; --danger: #fa5638;
@@ -53,7 +53,7 @@ html[data-palette="vibrant"][data-theme="dark"] {                     /* Vibrant
   --plot-eta: #1ad2ec; --plot-u: #1ad2ec;
   --area-1: #1ad2ec; --area-2: #7de39a; --area-3: #fbcb55; --area-4: #a9805a;
   --area-5: #fa5638; --area-6: #27d9f0; --area-7: #f5ae1b; --area-8: #34cc63;
-  --area-9: #9a86d4; --area-10: #d97bb5;
+  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #93a0ad;
 }
 
 /* ---- vibe tokens (style) ---- */
@@ -165,6 +165,10 @@ th { background: var(--header-bg); }
 .app-card:hover { border-color: var(--accent); background: var(--btn-hover); }
 .app-card .aid { font-weight: 700; color: var(--label); }
 .app-card .badge { position: absolute; right: 10px; top: 12px; }
+/* under-construction placeholder cards (non-clickable) */
+.app-card.coming-soon { opacity: .6; cursor: default; border-left: 5px solid var(--border); box-shadow: none; }
+.app-card.coming-soon:hover { border-color: var(--border); background: var(--panel); }
+.badge.soon { background: color-mix(in srgb, var(--muted) 20%, transparent); color: var(--muted); text-transform: none; font-weight: 600; }
 .app-select { max-width: 260px; }
 .homelink { text-decoration: none; color: var(--accent); font-weight: 600; margin-right: 6px; }
 .homelink:hover { text-decoration: underline; }

@@ -14,8 +14,21 @@ from .theme import load_qss
 AREA_ORDER = [
     "Wave Prediction", "Wave Theory", "Wave Transformation", "Structural Design",
     "Wave Runup, Transmission, and Overtopping", "Littoral Processes",
-    "Inlet Processes", "Harbor Design", "Storm Surge", "Miscellaneous Routines",
+    "Inlet Processes", "Harbor Design", "Storm Surge", "Coastal Hazards",
+    "Miscellaneous Routines",
 ]
+
+# Under-construction applications shown as non-clickable "coming soon" cards (parity
+# with the web manifest's comingSoon entries).
+COMING_SOON = {
+    "Coastal Hazards": [
+        ("10-1", "Water Level Detrending"),
+        ("10-2", "Non-Tidal Residuals"),
+        ("10-3", "Peaks Over Threshold"),
+        ("10-4", "Probabilistic Simulation Technique"),
+        ("10-5", "Joint Probability Method"),
+    ],
+}
 
 
 class HubWindow(QtWidgets.QMainWindow):
@@ -64,7 +77,8 @@ class HubWindow(QtWidgets.QMainWindow):
         by_area: dict[str, list] = {}
         for mod in self.apps.values():
             by_area.setdefault(mod.APP_META.area, []).append(mod)
-        ordered = [a for a in AREA_ORDER if a in by_area] + \
+        present = set(by_area) | set(COMING_SOON)
+        ordered = [a for a in AREA_ORDER if a in present] + \
                   [a for a in by_area if a not in AREA_ORDER]
 
         if not self.apps:
@@ -72,9 +86,12 @@ class HubWindow(QtWidgets.QMainWindow):
         for area in ordered:
             box = QtWidgets.QGroupBox(area)
             grid = QtWidgets.QGridLayout(box)
-            mods = sorted(by_area[area], key=lambda m: m.APP_META.aces_id)
-            for i, mod in enumerate(mods):
-                grid.addWidget(self._app_button(mod), i // 2, i % 2)
+            mods = sorted(by_area.get(area, []), key=lambda m: m.APP_META.aces_id)
+            i = 0
+            for mod in mods:
+                grid.addWidget(self._app_button(mod), i // 2, i % 2); i += 1
+            for aid, name in COMING_SOON.get(area, []):
+                grid.addWidget(self._placeholder_button(aid, name), i // 2, i % 2); i += 1
             iv.addWidget(box)
         iv.addStretch(1)
         scroll.setWidget(inner)
@@ -89,6 +106,15 @@ class HubWindow(QtWidgets.QMainWindow):
         btn.setCursor(Qt.PointingHandCursor)
         btn.setToolTip(m.cite)
         btn.clicked.connect(lambda _=False, mm=mod: self._open(mm))
+        return btn
+
+    def _placeholder_button(self, aid: str, name: str) -> QtWidgets.QWidget:
+        """A disabled, non-clickable card for an under-construction application."""
+        btn = QtWidgets.QPushButton(f"{aid}    {name}    (coming soon)")
+        btn.setObjectName("AppCard")
+        btn.setEnabled(False)               # non-clickable
+        btn.setMinimumHeight(42)
+        btn.setToolTip("Coming soon")
         return btn
 
     def _open(self, mod):

@@ -55,6 +55,15 @@
       grid.className = "hub-grid";
       const ai = CHESSQC_AREAS.indexOf(area);          // 0-based area index -> --area-N
       for (const a of byArea[area].sort((x, y) => x.id.localeCompare(y.id))) {
+        if (a.comingSoon) {                       // under-construction placeholder: non-clickable
+          const card = document.createElement("div");
+          card.className = "app-card coming-soon";
+          card.dataset.search = `${a.id} ${a.name} ${a.area}`.toLowerCase();
+          card.innerHTML = `<span class="aid">${a.id}</span> ${a.name}
+                            <span class="badge soon">coming soon</span>`;
+          grid.appendChild(card);
+          continue;
+        }
         const card = document.createElement("a");
         card.className = "app-card";
         card.href = `calc.html?app=${encodeURIComponent(a.id)}`;

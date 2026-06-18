@@ -246,6 +246,12 @@ const CHESSQC_APPS = [
     classification: "provisional",
     src: "../../backend/applications/chessqc_7_1_inlet_hydraulics.py",
   },
+  // Coastal Hazards (area 10) — under construction; shown as non-clickable "coming soon" cards.
+  { id: "10-1", name: "Water Level Detrending", area: "Coastal Hazards", comingSoon: true },
+  { id: "10-2", name: "Non-Tidal Residuals", area: "Coastal Hazards", comingSoon: true },
+  { id: "10-3", name: "Peaks Over Threshold", area: "Coastal Hazards", comingSoon: true },
+  { id: "10-4", name: "Probabilistic Simulation Technique", area: "Coastal Hazards", comingSoon: true },
+  { id: "10-5", name: "Joint Probability Method", area: "Coastal Hazards", comingSoon: true },
   {
     id: "M-1",
     name: "Miscellaneous Breaker and Steepness Routines",
@@ -259,7 +265,7 @@ const CHESSQC_APPS = [
 const CHESSQC_AREAS = [
   "Wave Prediction", "Wave Theory", "Wave Transformation", "Structural Design",
   "Wave Runup, Transmission, and Overtopping", "Littoral Processes",
-  "Inlet Processes", "Harbor Design", "Storm Surge", "Miscellaneous Routines",
+  "Inlet Processes", "Harbor Design", "Storm Surge", "Coastal Hazards", "Miscellaneous Routines",
 ];
 
 if (typeof module !== "undefined") module.exports = { CHESSQC_APPS, CHESSQC_AREAS };
