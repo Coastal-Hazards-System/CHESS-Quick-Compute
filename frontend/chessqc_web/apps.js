@@ -246,8 +246,15 @@ const CHESSQC_APPS = [
     classification: "provisional",
     src: "../../backend/applications/chessqc_7_1_inlet_hydraulics.py",
   },
-  // Coastal Hazards (area 10) — under construction; shown as non-clickable "coming soon" cards.
-  { id: "10-1", name: "Water Level Detrending", area: "Coastal Hazards", comingSoon: true },
+  // Coastal Hazards (area 10)
+  {
+    id: "10-1",
+    name: "Water Level Detrending",
+    area: "Coastal Hazards",
+    classification: "standard",
+    src: "../../backend/applications/chessqc_10_1_water_level_detrending.py",
+  },
+  // remaining area-10 apps under construction; shown as non-clickable "coming soon" cards.
   { id: "10-2", name: "Non-Tidal Residuals", area: "Coastal Hazards", comingSoon: true },
   { id: "10-3", name: "Peaks Over Threshold", area: "Coastal Hazards", comingSoon: true },
   { id: "10-4", name: "Probabilistic Simulation Technique", area: "Coastal Hazards", comingSoon: true },

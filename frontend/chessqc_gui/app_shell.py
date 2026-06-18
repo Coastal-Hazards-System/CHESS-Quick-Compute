@@ -17,6 +17,11 @@ from common import units
 from . import settings
 from .theme import get_plot_palette, vibe_label_opts
 
+# bundled station CSVs live at the repo root: data/water_levels/<id>.csv
+_DATA_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data", "water_levels")
+
 import matplotlib
 matplotlib.use("QtAgg")
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -258,6 +263,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             return QtWidgets.QCheckBox()
         if f.kind == "table":
             return self._make_table(f)
+        if f.kind == "csv":
+            return self._make_csv(f)
         if f.kind in ("list", "matrix"):             # structured numeric input edited as raw JSON
             ed = QtWidgets.QPlainTextEdit()
             ed.setPlaceholderText("JSON (SI units); empty = use the app's built-in geometry")
@@ -278,6 +285,70 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             sb.setSuffix(f" {unit}")
         sb.setSingleStep(0.1 if dec <= 2 else 10 ** -(dec - 1))
         return sb
+
+    # ---- CSV-record field (kind == "csv") ----
+    def _make_csv(self, f) -> QtWidgets.QWidget:
+        """A bundled-station dropdown + file upload; the loaded CSV text is held on
+        the container (`_csv_text`) and read back by _gather_si."""
+        box = QtWidgets.QWidget()
+        lay = QtWidgets.QHBoxLayout(box)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(8)
+        combo = QtWidgets.QComboBox()
+        combo.addItem("— sample (built-in) —")
+        for c in f.choices:
+            sid, _, name = str(c).partition("|")
+            combo.addItem(f"{sid} — {name}" if name else sid)
+            combo.setItemData(combo.count() - 1, sid)
+        combo.addItem("Upload a file…")
+        combo.setItemData(combo.count() - 1, "__upload__")
+        status = QtWidgets.QLabel("built-in sample")
+        status.setObjectName("CsvStatus")
+        box._combo = combo
+        box._status = status
+        box._csv_text = "" if f.default is None else str(f.default)
+        box._default = box._csv_text
+        box._last_idx = 0
+        combo.currentIndexChanged.connect(
+            lambda idx, w=box, fld=f: self._on_csv_changed(w, fld, idx))
+        lay.addWidget(combo, 1)
+        lay.addWidget(status, 2)
+        return box
+
+    def _on_csv_changed(self, w, f, idx: int) -> None:
+        if idx == 0:                                  # built-in sample
+            w._csv_text = "" if f.default is None else str(f.default)
+            w._status.setText("built-in sample")
+            w._last_idx = 0
+            self._on_compute()
+            return
+        data = w._combo.itemData(idx)
+        if data == "__upload__":
+            path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Select water-level CSV", "", "CSV files (*.csv);;All files (*)")
+            if not path:                              # cancelled -> revert selection
+                w._combo.blockSignals(True)
+                w._combo.setCurrentIndex(w._last_idx)
+                w._combo.blockSignals(False)
+                return
+            try:
+                with open(path, encoding="utf-8", errors="replace") as fh:
+                    w._csv_text = fh.read()
+            except OSError as e:
+                w._status.setText(f"read failed: {e}")
+                return
+            w._status.setText(f"uploaded {os.path.basename(path)}")
+        else:                                         # bundled station id
+            try:
+                with open(os.path.join(_DATA_DIR, f"{data}.csv"),
+                          encoding="utf-8", errors="replace") as fh:
+                    w._csv_text = fh.read()
+            except OSError as e:
+                w._status.setText(f"load failed: {e}")
+                return
+            w._status.setText(f"loaded {w._combo.itemText(idx)}")
+        w._last_idx = idx
+        self._on_compute()
 
     def _input_decimals(self, f, unit) -> int:
         """Decimal places for an input spin box: at least the global display count,
@@ -376,6 +447,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 out[f.key] = w.isChecked()
             elif f.kind == "table":
                 out[f.key] = self._gather_table(w)
+            elif f.kind == "csv":
+                out[f.key] = getattr(w, "_csv_text", "")
             elif f.kind in ("list", "matrix"):       # raw JSON (SI); empty -> None (built-in geometry)
                 txt = w.toPlainText().strip()
                 out[f.key] = json.loads(txt) if txt else None
@@ -596,6 +669,13 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 w.setChecked(bool(f.default))
             elif f.kind == "table":
                 self._fill_table(w._table, w._cols, list(f.default or []), self.system)
+            elif f.kind == "csv":
+                w._combo.blockSignals(True)
+                w._combo.setCurrentIndex(0)
+                w._combo.blockSignals(False)
+                w._csv_text = "" if f.default is None else str(f.default)
+                w._last_idx = 0
+                w._status.setText("built-in sample")
             elif f.kind in ("list", "matrix"):
                 w.setPlainText("" if f.default is None else json.dumps(f.default))
             else:
@@ -642,6 +722,12 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             elif f.kind == "table":
                 rows = self._gather_table(w)
                 val = f"{len(rows)} rows"
+            elif f.kind == "csv":
+                txt = getattr(w, "_csv_text", "")
+                val = f"{txt.count(chr(10)) + 1 if txt else 0} lines loaded"
+            elif f.kind in ("list", "matrix"):
+                txt = w.toPlainText().strip()
+                val = "(custom JSON)" if txt else "(app default)"
             else:
                 val = f"{w.value():g} {self._unit(f)}".rstrip()
             lines.append(f"  {f.label}: {val}")

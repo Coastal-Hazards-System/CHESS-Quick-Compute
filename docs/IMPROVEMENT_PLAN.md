@@ -1,8 +1,9 @@
 # CHESS-QC — Application Improvement Plan
 *Coastal Hazards, Engineering, and Structures System (CHESS) — Quick Compute (QC)*
 
-Improvement roadmap for all 35 built applications (the area-10 "Coastal Hazards" placeholders
-are excluded). Prepared 2026-06.
+Improvement roadmap for the built ACES-derived applications (the remaining area-10 "Coastal
+Hazards" placeholders, and the new 10-1 Water Level Detrending tool, are not covered here).
+Prepared 2026-06.
 
 Each application is assessed on three axes: **(1) validation shortcomings**, **(2) missing
 data**, **(3) a superior / replacement method** that could be adopted. Feasibility tags:

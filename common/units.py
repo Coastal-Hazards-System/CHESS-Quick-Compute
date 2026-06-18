@@ -37,6 +37,8 @@ TO_SI = {
     "N-m/m": 1.0, "lb-ft/ft": 4.4482216,   # (47.880259 * 0.3048^2 = 4.4482)
     # volume transport rate: canonical m^3/yr
     "m^3/yr": 1.0, "yd^3/yr": 0.764554858,   # 1 yd^3 = 0.9144^3 m^3
+    # sea-level trend rate: canonical m/yr (year identical in both systems)
+    "yr": 1.0, "m/yr": 1.0, "ft/yr": 0.3048, "mm/yr": 0.001, "in/yr": 0.0254,
     # volume: canonical m^3
     "m^3": 1.0, "yd^3": 0.764554858,
     # overtopping rate per unit length (= area flux m^2/s): canonical m^3/s/m

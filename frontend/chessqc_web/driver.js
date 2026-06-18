@@ -24,6 +24,7 @@ const TO_SI = {
   "N": 1, "kN": 1000, "lb": 4.4482216, "tons": 8896.4432,
   "N-m/m": 1, "lb-ft/ft": 4.4482216,
   "m^3/yr": 1, "yd^3/yr": 0.764554858,
+  "m/yr": 1, "ft/yr": 0.3048, "mm/yr": 0.001, "in/yr": 0.0254,
   "m^3": 1, "yd^3": 0.764554858, "phi": 1,
   "m^3/s/m": 1, "ft^3/s/ft": 0.09290304,
   // areas, flows, viscosity, inverse length, nautical mile
@@ -199,6 +200,57 @@ function buildForm() {
       block.append(lab, ta); box.appendChild(block);
       continue;
     }
+    if (fld.kind === "csv") {
+      // CSV record input: a bundled-station dropdown + a file upload. The loaded
+      // text is held on the block (not in the DOM) and read back by gatherSI.
+      const block = document.createElement("div"); block.style.gridColumn = "1 / -1";
+      block.dataset.key = fld.key; block.dataset.csv = "1";
+      block._csvText = fld.default == null ? "" : String(fld.default);
+      const lab = document.createElement("label");
+      lab.textContent = fld.label + ":"; lab.title = fld.note || "";
+      lab.style.color = "var(--label)"; lab.style.display = "block"; lab.style.margin = "4px 0";
+      const ctrls = document.createElement("div");
+      ctrls.style.display = "flex"; ctrls.style.gap = "8px";
+      ctrls.style.flexWrap = "wrap"; ctrls.style.alignItems = "center";
+      const sel = document.createElement("select");
+      const opt0 = document.createElement("option");
+      opt0.value = ""; opt0.textContent = "— sample (built-in) —"; sel.appendChild(opt0);
+      for (const c of (fld.choices || [])) {
+        const [id, name] = String(c).split("|");
+        const o = document.createElement("option");
+        o.value = id; o.textContent = name ? `${id} — ${name}` : id; sel.appendChild(o);
+      }
+      const file = document.createElement("input");
+      file.type = "file"; file.accept = ".csv,text/csv";
+      const status = document.createElement("span"); status.className = "unit";
+      status.textContent = "built-in sample";
+      const orlab = document.createElement("span");
+      orlab.textContent = "or upload:"; orlab.style.color = "var(--muted, #888)";
+      sel.addEventListener("change", async () => {
+        file.value = "";
+        if (!sel.value) {
+          block._csvText = String(fld.default || ""); status.textContent = "built-in sample";
+          doCompute(); return;
+        }
+        status.textContent = "loading…";
+        try {
+          const resp = await fetch(`../../data/water_levels/${sel.value}.csv`);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          block._csvText = await resp.text();
+          status.textContent = `loaded ${sel.options[sel.selectedIndex].textContent}`;
+          doCompute();
+        } catch (e) { status.textContent = `load failed: ${e.message}`; }
+      });
+      file.addEventListener("change", async () => {
+        const f = file.files && file.files[0]; if (!f) return;
+        sel.value = ""; status.textContent = "loading…";
+        try { block._csvText = await f.text(); status.textContent = `loaded ${f.name}`; doCompute(); }
+        catch (e) { status.textContent = `read failed: ${e.message}`; }
+      });
+      ctrls.append(sel, orlab, file, status);
+      block.append(lab, ctrls); box.appendChild(block);
+      continue;
+    }
     const row = document.createElement("div"); row.className = "row";
     const lab = document.createElement("label"); lab.textContent = fld.label; lab.title = fld.note || "";
     let ctl;
@@ -279,6 +331,11 @@ function gatherSI() {
   const inp = {};
   for (const fld of contract.inputs) {
     if (fld.kind === "table") { inp[fld.key] = gatherTable(fld); continue; }
+    if (fld.kind === "csv") {
+      const el = document.querySelector(`[data-key="${fld.key}"][data-csv="1"]`);
+      inp[fld.key] = el && el._csvText != null ? el._csvText : "";
+      continue;
+    }
     if (fld.kind === "list" || fld.kind === "matrix") {
       const ta = document.querySelector(`[data-key="${fld.key}"]`);
       const txt = ta.value.trim();
@@ -545,6 +602,11 @@ function reportText() {
   for (const fld of contract.inputs) {
     let val;
     if (fld.kind === "table") { val = `${gatherTable(fld).length} rows`; s += `  ${fld.label}: ${val}\n`; continue; }
+    if (fld.kind === "csv") {
+      const el = document.querySelector(`[data-key="${fld.key}"][data-csv="1"]`);
+      const nrows = el && el._csvText ? el._csvText.split("\n").length : 0;
+      s += `  ${fld.label}: ${nrows} lines loaded\n`; continue;
+    }
     if (fld.kind === "list" || fld.kind === "matrix") {
       const ta = document.querySelector(`[data-key="${fld.key}"]`);
       val = ta.value.trim() === "" ? "(app default)" : "(custom JSON)";
@@ -573,7 +635,7 @@ function reportText() {
 function onUnits(newSys) {
   if (newSys === system) return;
   for (const fld of contract.inputs) {
-    if (["choice", "bool", "table", "list", "matrix"].includes(fld.kind)) continue;
+    if (["choice", "bool", "table", "list", "matrix", "csv"].includes(fld.kind)) continue;
     const ctl = document.querySelector(`[data-key="${fld.key}"]`);
     const oldU = fieldUnit(fld);
     const newU = newSys === "SI" ? siUnit(fld.unit_si) : fld.unit_us;
