@@ -377,7 +377,7 @@ function render(res) {
   // scalar/point value rows
   const vbox = $("values"); vbox.innerHTML = "";
   for (const o of contract.outputs) {
-    if (o.kind === "profile" || o.kind === "grid" || !(o.key in res)) continue;
+    if (o.kind === "profile" || o.kind === "grid" || o.kind === "vline" || !(o.key in res)) continue;
     const u = outUnit(o), raw = res[o.key];
     // numeric -> convert+format; string (a label like "Beta-Rayleigh", or an inf/nan
     // sentinel from the bridge) -> show as-is with the unit appended when present
@@ -503,6 +503,11 @@ function drawPlotInto(res, cv) {
   const fullMin = Math.min(...Xf), fullMax = Math.max(...Xf);
   cv._xfull = [fullMin, fullMax];
   const [xmin, xmax] = cv._viewX && cv._viewX[1] > cv._viewX[0] ? cv._viewX : [fullMin, fullMax];
+  // vertical markers (kind "vline") on the x axis, e.g. the NTDE midpoint; "nan" -> omitted
+  const vlines = contract.outputs
+    .filter((o) => o.kind === "vline" && o.key in res)
+    .map((o) => ({ x: fromSI(Number(res[o.key]), x.unit), label: _shortLabel(o) }))
+    .filter((v) => Number.isFinite(v.x));
 
   const panel = (y0, y1, series, label) => {
     const L = 48, R = W - 12, T = y0 + 18, B = y1 - 26;       // plot box
@@ -550,6 +555,18 @@ function drawPlotInto(res, cv) {
         if (pen) ctx.lineTo(px, py); else { ctx.moveTo(px, py); pen = true; }
       });
       ctx.stroke();
+    }
+    // vertical markers (e.g. NTDE midpoint), dashed, clipped to the box
+    if (vlines.length) {
+      ctx.strokeStyle = C.fg; ctx.lineWidth = 1.1; ctx.setLineDash([5, 4]);
+      ctx.font = "10px sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "left";
+      for (const v of vlines) {
+        if (v.x < xmin || v.x > xmax) continue;
+        const px = sx(v.x);
+        ctx.beginPath(); ctx.moveTo(px, T); ctx.lineTo(px, B); ctx.stroke();
+        if (y0 < 1) { ctx.fillStyle = C.fg; ctx.fillText(`${v.label} ${fmtTick(v.x)}`, px + 4, T + 2); }
+      }
+      ctx.setLineDash([]);
     }
     ctx.restore();
     ctx.fillStyle = C.fg; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = "11px sans-serif";
@@ -704,7 +721,7 @@ function reportText() {
   }
   s += "\nOutputs:\n";
   for (const o of contract.outputs) {
-    if (o.kind === "profile" || o.kind === "grid" || !lastRes || !(o.key in lastRes)) continue;
+    if (o.kind === "profile" || o.kind === "grid" || o.kind === "vline" || !lastRes || !(o.key in lastRes)) continue;
     const u = outUnit(o), raw = lastRes[o.key];
     const txt = typeof raw === "number"
       ? `${fmtNum(fromSI(raw, u))} ${u}`.trim()

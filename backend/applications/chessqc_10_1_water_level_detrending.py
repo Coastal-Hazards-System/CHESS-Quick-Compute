@@ -142,6 +142,9 @@ OUTPUTS = (
     Out("record_years", "Record length", "yr", "yr", "scalar"),
     Out("n_samples", "Samples used in fit", "", "", "scalar"),
     Out("rms_residual", "RMS residual about trend", "m", "ft", "scalar"),
+    # vertical marker on the plots at the NTDE midpoint (NaN -> not drawn, e.g. for
+    # the record-mean reference); plotted on the x (year) axis
+    Out("pivot_line", "NTDE midpoint", "yr", "yr", "vline"),
     Out("profile_year", "Profile: year", "yr", "yr", "profile"),
     # Panel 1 (group "obs"): observed level with the fitted linear trend on top.
     Out("profile_original", "Profile: observed", "m", "ft", "profile", group="obs"),
@@ -160,6 +163,7 @@ class Result:
     record_years: float
     n_samples: float
     rms_residual: float
+    pivot_line: float
     profile_year: np.ndarray
     profile_original: np.ndarray
     profile_trend: np.ndarray
@@ -317,6 +321,7 @@ def compute(inp: dict) -> Result:
     return Result(
         slope_per_year=slope, pivot_year=pivot, total_trend=total_trend,
         record_years=record_years, n_samples=float(n), rms_residual=rms,
+        pivot_line=(pivot if use_pivot else float("nan")),
         profile_year=pt, profile_original=po, profile_trend=ptr,
         profile_detrended=pdt, profile_datum=pdatum, notes="; ".join(notes),
     )
@@ -338,6 +343,10 @@ def _self_tests() -> None:
     assert abs(r_mid.pivot_year - 1992.5) < 1e-9, r_mid.pivot_year
     mean_year = float(np.mean(r_ord.profile_year))
     assert abs(r_ord.pivot_year - mean_year) < 1e-9
+
+    # NTDE-midpoint reference draws a vertical marker; record-mean does not.
+    assert abs(r_mid.pivot_line - 1992.5) < 1e-9, r_mid.pivot_line
+    assert math.isnan(r_ord.pivot_line), r_ord.pivot_line
 
     # Only the detrended offset differs, by slope*(pivot_mid - mean_year).
     expected = r_mid.slope_per_year * (r_mid.pivot_year - mean_year)

@@ -232,7 +232,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         rows = QtWidgets.QWidget()
         self._rows_form = QtWidgets.QFormLayout(rows)
         for o in self.outputs:
-            if o.kind in ("profile", "grid"):
+            if o.kind in ("profile", "grid", "vline"):
                 continue
             lab = QtWidgets.QLabel("-")
             lab.setObjectName("resultValue")
@@ -500,7 +500,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
     def _render(self, r):
         # scalar/point value rows (convert SI -> current unit)
         for o in self.outputs:
-            if o.kind in ("profile", "grid"):
+            if o.kind in ("profile", "grid", "vline"):
                 continue
             val_si = getattr(r, o.key, None)
             if val_si is None:
@@ -638,6 +638,18 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         fig.clear()
         fig.set_facecolor(pal["bg"])
         (xlab, xu, X), groups = self._profile_series(r)
+        # vertical markers (kind "vline"), e.g. the NTDE midpoint; NaN -> not drawn
+        vlines = []
+        for o in self.outputs:
+            if o.kind != "vline":
+                continue
+            val = getattr(r, o.key, None)
+            try:
+                fv = units.from_si(float(val), xu)
+            except (TypeError, ValueError):
+                continue
+            if math.isfinite(fv):
+                vlines.append((o.label.split(":", 1)[-1].strip(), fv))
         colors = [pal["eta"], pal["u"], pal["w"], pal["fg"], pal["text"]]   # series color cycle
         n, ci, axes = len(groups), 0, []
         for gi, g in enumerate(groups):
@@ -649,6 +661,11 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                     ci += 1
                 ax.plot(X, arr, label=lab, color=color)
             ax.axhline(0, color=pal["axis"], lw=.6)
+            for vlab, vx in vlines:
+                ax.axvline(vx, color=pal["fg"], ls="--", lw=1.0, alpha=.75)
+                if gi == 0:
+                    ax.text(vx, 1.0, f" {vlab} {vx:g}", transform=ax.get_xaxis_transform(),
+                            fontsize=7, color=pal["fg"], va="top", ha="left", clip_on=True)
             ylab = g["series"][0][0] + " " if len(g["series"]) == 1 else ""
             ax.set_ylabel(f"{ylab}({g['unit']})".strip(), fontsize=8, color=pal["fg"])
             self._style_ax(ax, pal)
