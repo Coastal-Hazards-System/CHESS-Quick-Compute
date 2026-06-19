@@ -390,7 +390,7 @@ function render(res) {
   // scalar/point value rows
   const vbox = $("values"); vbox.innerHTML = "";
   for (const o of contract.outputs) {
-    if (o.kind === "profile" || o.kind === "grid" || o.kind === "vline" || !(o.key in res)) continue;
+    if (["profile", "grid", "vline", "scatter", "scatter_x"].includes(o.kind) || !(o.key in res)) continue;
     const u = outUnit(o), raw = res[o.key];
     // numeric -> convert+format; string (a label like "Beta-Rayleigh", or an inf/nan
     // sentinel from the bridge) -> show as-is with the unit appended when present
@@ -429,7 +429,7 @@ function profileSeries(res) {
     const by = {};
     for (const o of ys) {
       const gk = o.group || o.key, u = outUnit(o);
-      if (!(gk in by)) { by[gk] = { unit: u, series: [] }; groups.push(by[gk]); }
+      if (!(gk in by)) { by[gk] = { unit: u, gid: gk, series: [] }; groups.push(by[gk]); }
       const idx = by[gk].series.length;
       by[gk].series.push({ name: _shortLabel(o), data: res[o.key].map((v) => fromSI(v, u)),
                            color: gcolors[idx % gcolors.length] });
@@ -524,8 +524,15 @@ function drawPlotInto(res, cv) {
     .filter((o) => o.kind === "vline" && o.key in res)
     .map((o) => ({ x: fromSI(Number(res[o.key]), x.unit), label: _shortLabel(o) }))
     .filter((v) => Number.isFinite(v.x));
+  // scatter overlays (kind "scatter") draw markers at their own (x_key, key); grouped onto a panel by `group`
+  const pkColor = cssVar("--plot-peaks", "#d62728");
+  const scatters = contract.outputs
+    .filter((o) => o.kind === "scatter" && o.key in res && o.x_key && o.x_key in res)
+    .map((o) => ({ gid: o.group,
+                   xs: res[o.x_key].map((v) => fromSI(Number(v), x.unit)),
+                   ys: res[o.key].map((v) => fromSI(Number(v), outUnit(o))) }));
 
-  const panel = (y0, y1, series, label) => {
+  const panel = (y0, y1, series, label, gid) => {
     const L = 48, R = W - 12, T = y0 + 18, B = y1 - 26;       // plot box
     let lo = Infinity, hi = -Infinity;
     for (const s of series) X.forEach((xx, i) => {
@@ -584,6 +591,16 @@ function drawPlotInto(res, cv) {
       }
       ctx.setLineDash([]);
     }
+    // scatter markers (e.g. POT peaks) for this panel's group
+    for (const sc of scatters) {
+      if (sc.gid !== gid) continue;
+      ctx.fillStyle = pkColor;
+      for (let i = 0; i < sc.xs.length; i++) {
+        const xx = sc.xs[i], v = sc.ys[i];
+        if (!Number.isFinite(xx) || !Number.isFinite(v) || xx < xmin || xx > xmax) continue;
+        ctx.beginPath(); ctx.arc(sx(xx), sy(v), 2.6, 0, 2 * Math.PI); ctx.fill();
+      }
+    }
     ctx.restore();
     ctx.fillStyle = C.fg; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = "11px sans-serif";
     ctx.fillText(label, L + 2, y0 + 2);
@@ -603,7 +620,7 @@ function drawPlotInto(res, cv) {
   let box = null;
   groups.forEach((g, i) => {
     const label = g.series.length === 1 ? `${g.series[0].name} (${g.unit})` : `(${g.unit})`;
-    box = panel((H * i) / n, (H * (i + 1)) / n, g.series, label);
+    box = panel((H * i) / n, (H * (i + 1)) / n, g.series, label, g.gid);
   });
   ctx.fillStyle = C.text; ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.font = "10px sans-serif";
   ctx.fillText(`${x.label} (${x.unit})`, W - 12, H - 2);

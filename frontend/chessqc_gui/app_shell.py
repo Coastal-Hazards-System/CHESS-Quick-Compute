@@ -250,7 +250,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         rows = QtWidgets.QWidget()
         self._rows_form = QtWidgets.QFormLayout(rows)
         for o in self.outputs:
-            if o.kind in ("profile", "grid", "vline"):
+            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x"):
                 continue
             lab = QtWidgets.QLabel("-")
             lab.setObjectName("resultValue")
@@ -518,7 +518,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
     def _render(self, r):
         # scalar/point value rows (convert SI -> current unit)
         for o in self.outputs:
-            if o.kind in ("profile", "grid", "vline"):
+            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x"):
                 continue
             val_si = getattr(r, o.key, None)
             if val_si is None:
@@ -579,7 +579,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 u = self._out_unit(o)
                 arr = units.from_si(np.asarray(getattr(r, o.key), dtype=float), u)
                 if gk not in by:
-                    by[gk] = {"unit": u, "series": []}
+                    by[gk] = {"unit": u, "gid": gk, "series": []}
                     groups.append(by[gk])
                 idx = len(by[gk]["series"])
                 by[gk]["series"].append((short(o), arr, ecolors[idx % len(ecolors)]))
@@ -668,6 +668,14 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 continue
             if math.isfinite(fv):
                 vlines.append((o.label.split(":", 1)[-1].strip(), fv))
+        # scatter overlays (kind "scatter") -> markers at their own (x_key, key), by group
+        scatters = []
+        for o in self.outputs:
+            if o.kind != "scatter" or not getattr(o, "x_key", ""):
+                continue
+            xs = units.from_si(np.asarray(getattr(r, o.x_key), dtype=float), xu)
+            ys = units.from_si(np.asarray(getattr(r, o.key), dtype=float), self._out_unit(o))
+            scatters.append((getattr(o, "group", ""), o.label.split(":", 1)[-1].strip(), xs, ys))
         colors = [pal["eta"], pal["u"], pal["w"], pal["fg"], pal["text"]]   # series color cycle
         n, ci, axes = len(groups), 0, []
         for gi, g in enumerate(groups):
@@ -678,6 +686,10 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 if not (len(s) > 2 and s[2]):
                     ci += 1
                 ax.plot(X, arr, label=lab, color=color)
+            for sgid, slab, sxs, sys_ in scatters:
+                if sgid == g.get("gid"):
+                    ax.plot(sxs, sys_, "o", color="#d62728", markersize=3.5,
+                            markeredgecolor="white", markeredgewidth=0.3, label=slab, zorder=5)
             ax.axhline(0, color=pal["axis"], lw=.6)
             for vlab, vx in vlines:
                 ax.axvline(vx, color=pal["fg"], ls="--", lw=1.0, alpha=.75)

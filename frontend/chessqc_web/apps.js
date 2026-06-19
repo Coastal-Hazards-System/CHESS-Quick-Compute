@@ -254,9 +254,15 @@ const CHESSQC_APPS = [
     classification: "standard",
     src: "../../backend/applications/chessqc_10_1_water_level_detrending.py",
   },
-  // remaining area-10 apps under construction; shown as non-clickable "coming soon" cards.
   { id: "10-2", name: "Non-Tidal Residuals", area: "Coastal Hazards", comingSoon: true },
-  { id: "10-3", name: "Peaks Over Threshold", area: "Coastal Hazards", comingSoon: true },
+  {
+    id: "10-3",
+    name: "Peaks Over Threshold",
+    area: "Coastal Hazards",
+    classification: "standard",
+    src: "../../backend/applications/chessqc_10_3_peaks_over_threshold.py",
+  },
+  // remaining area-10 apps under construction; shown as non-clickable "coming soon" cards.
   { id: "10-4", name: "Probabilistic Simulation Technique", area: "Coastal Hazards", comingSoon: true },
   { id: "10-5", name: "Joint Probability Method", area: "Coastal Hazards", comingSoon: true },
   {

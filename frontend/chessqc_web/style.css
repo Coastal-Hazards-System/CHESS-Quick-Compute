@@ -11,6 +11,7 @@
   --ctl-bg: #ffffff; --ctl-border: #cfc7b7; --btn-bg: #fbf8f2; --btn-hover: #f1ede4;
   --plot-bg: #ffffff; --plot-fg: #16211f; --plot-grid: #e2dcd0; --plot-axis: #cfc7b7; --plot-text: #7c888b;
   --plot-w: #a86f2f;   /* sand neutral (mode-dependent, palette-independent) */
+  --plot-peaks: #d62728;   /* POT peak markers */
 }
 html[data-theme="dark"] {
   --bg: #0b1316; --fg: #eaf2f3; --panel: #121d21; --border: #243035;
@@ -18,6 +19,7 @@ html[data-theme="dark"] {
   --ctl-bg: #16242a; --ctl-border: #33444b; --btn-bg: #16242a; --btn-hover: #1b2a30;
   --plot-bg: #121d21; --plot-fg: #eaf2f3; --plot-grid: #243035; --plot-axis: #33444b; --plot-text: #a7b7bb;
   --plot-w: #cda05f;
+  --plot-peaks: #ff6b6b;
 }
 
 /* ---- chromatic tokens (depend on PALETTE x MODE). The palette is chosen in

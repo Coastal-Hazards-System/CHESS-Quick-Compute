@@ -23,7 +23,6 @@ AREA_ORDER = [
 COMING_SOON = {
     "Coastal Hazards": [
         ("10-2", "Non-Tidal Residuals"),
-        ("10-3", "Peaks Over Threshold"),
         ("10-4", "Probabilistic Simulation Technique"),
         ("10-5", "Joint Probability Method"),
     ],
