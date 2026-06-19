@@ -191,13 +191,45 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         box = QtWidgets.QGroupBox("Inputs")
         form = QtWidgets.QFormLayout(box)
         form.setLabelAlignment(Qt.AlignRight)
+        self._inputs_form = form
+        self._input_rows = {}
         for f in self.inputs:
             w = self._make_widget(f)
             self._widgets[f.key] = w
             lbl = self._field_label(f.label)
             lbl.setToolTip(f.note or "")
             form.addRow(lbl, w)
+            self._input_rows[f.key] = (lbl, w)
+        # reactive show_if: re-evaluate visibility when a controlling input changes
+        for k in {c[0] for f in self.inputs if (c := getattr(f, "show_if", ()))}:
+            cw = self._widgets.get(k)
+            if isinstance(cw, QtWidgets.QComboBox):
+                cw.currentIndexChanged.connect(lambda *_: self._apply_show_if())
+            elif isinstance(cw, QtWidgets.QCheckBox):
+                cw.toggled.connect(lambda *_: self._apply_show_if())
+        self._apply_show_if()
         return box
+
+    def _apply_show_if(self):
+        """Hide inputs whose `show_if = (other_key, value)` condition is not met
+        (e.g. 'Specified slope' shows only when Slope source = Specified slope)."""
+        for f in self.inputs:
+            cond = getattr(f, "show_if", ())
+            if not cond:
+                continue
+            cw = self._widgets.get(cond[0])
+            if isinstance(cw, QtWidgets.QComboBox):
+                cur = cw.currentText()
+            elif isinstance(cw, QtWidgets.QCheckBox):
+                cur = cw.isChecked()
+            else:
+                cur = None
+            vis = str(cur) == str(cond[1])
+            lbl, w = self._input_rows[f.key]
+            try:
+                self._inputs_form.setRowVisible(w, vis)
+            except (AttributeError, TypeError):
+                lbl.setVisible(vis); w.setVisible(vis)
 
     def _build_center(self) -> QtWidgets.QWidget:
         w = QtWidgets.QWidget()

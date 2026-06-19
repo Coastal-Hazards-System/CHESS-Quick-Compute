@@ -72,6 +72,7 @@ class Field:
     choices: tuple = ()
     columns: tuple = ()
     note: str = ""
+    show_if: tuple = ()        # (other_key, value): show this field only when inp[other_key] == value
 
 
 @dataclass(frozen=True)
@@ -132,7 +133,8 @@ INPUTS = (
           choices=("Fit (least squares)", "Specified slope"),
           note="Fit the slope from the record, or apply a supplied slope."),
     Field("slope_value", "Specified slope", "float", "m/yr", "ft/yr", default=0.003,
-          lo=-1.0, hi=1.0, note="used only when Slope source = Specified slope"),
+          lo=-1.0, hi=1.0, note="used only when Slope source = Specified slope",
+          show_if=("fit_mode", "Specified slope")),
 )
 
 OUTPUTS = (

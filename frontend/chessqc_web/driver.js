@@ -183,6 +183,7 @@ function buildForm() {
   for (const fld of contract.inputs) {
     if (fld.kind === "table") {
       const block = document.createElement("div"); block.style.gridColumn = "1 / -1";
+      block.dataset.fieldwrap = fld.key;
       const lab = document.createElement("label");
       lab.textContent = fld.label + ":"; lab.title = fld.note || "";
       lab.style.color = "var(--label)"; lab.style.display = "block"; lab.style.margin = "4px 0";
@@ -194,6 +195,7 @@ function buildForm() {
       // structured numeric input edited as raw JSON (no unit conversion); the default
       // is pre-loaded, and an empty box sends null so the app uses its built-in geometry.
       const block = document.createElement("div"); block.style.gridColumn = "1 / -1";
+      block.dataset.fieldwrap = fld.key;
       const u = siUnit(fld.unit_si) || "";
       const lab = document.createElement("label");
       lab.textContent = `${fld.label}, JSON${u ? ` (${u})` : ""}:`; lab.title = fld.note || "";
@@ -210,6 +212,7 @@ function buildForm() {
       // CSV record input: a bundled-station dropdown + a file upload. The loaded
       // text is held on the block (not in the DOM) and read back by gatherSI.
       const block = document.createElement("div"); block.style.gridColumn = "1 / -1";
+      block.dataset.fieldwrap = fld.key;
       block.dataset.key = fld.key; block.dataset.csv = "1";
       block._csvText = fld.default == null ? "" : String(fld.default);
       const lab = document.createElement("label");
@@ -259,7 +262,7 @@ function buildForm() {
       // when the user selects one. Outputs are prepopulated from the sample.
       continue;
     }
-    const row = document.createElement("div"); row.className = "row";
+    const row = document.createElement("div"); row.className = "row"; row.dataset.fieldwrap = fld.key;
     const lab = document.createElement("label"); lab.textContent = fld.label; lab.title = fld.note || "";
     let ctl;
     if (fld.kind === "choice") {
@@ -280,6 +283,20 @@ function buildForm() {
     unit.textContent = fld.kind === "choice" || fld.kind === "bool" ? "" : fieldUnit(fld);
     row.append(lab, ctl, unit);
     box.appendChild(row);
+  }
+  applyShowIf();
+}
+
+// Hide inputs whose `show_if: [otherKey, value]` condition is not currently met
+// (e.g. "Specified slope" only shows when Slope source = Specified slope).
+function applyShowIf() {
+  for (const fld of contract.inputs) {
+    const cond = fld.show_if;
+    if (!cond || !cond.length) continue;
+    const ctrl = document.querySelector(`[data-key="${cond[0]}"]`);
+    const cur = ctrl ? (ctrl.type === "checkbox" ? ctrl.checked : ctrl.value) : undefined;
+    const wrap = document.querySelector(`[data-fieldwrap="${fld.key}"]`);
+    if (wrap) wrap.style.display = String(cur) === String(cond[1]) ? "" : "none";
   }
 }
 
@@ -431,7 +448,10 @@ function profileSeries(res) {
 const fmtTick = (v) => {
   if (v === 0) return "0";
   const a = Math.abs(v);
-  return (a < 0.01 || a >= 1e4) ? v.toExponential(1) : String(+v.toPrecision(3));
+  if (a >= 1e5 || a < 1e-3) return v.toExponential(1);
+  // keep the integer part intact for large values (e.g. years: 1992.5, not 1990)
+  if (a >= 100) return String(Math.round(v * 10) / 10);
+  return String(+v.toPrecision(4));
 };
 
 const cssVar = (name, fallback) => {
@@ -773,6 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("inputs").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); doCompute(); }
   });
+  $("inputs").addEventListener("change", applyShowIf);   // reactive show_if visibility
   // Browser back/forward switches the active app (history entries set in buildAppSelect).
   window.addEventListener("popstate", () => {
     const id = new URLSearchParams(location.search).get("app");
