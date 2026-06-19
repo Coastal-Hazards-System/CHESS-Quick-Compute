@@ -57,6 +57,7 @@ class AppMeta:
     default_system: str = "SI"
     status: str = "Current"
     superseded_by: str = ""
+    next_apps: tuple = ()      # workflow "Next" targets: ((id, label), ...) carrying the series
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,7 @@ APP_META = AppMeta(
     classification="standard",
     cite="Zervas (2009) NOAA CO-OPS 053; NTDE datum convention",
     default_system="SI",
+    next_apps=(("10-2", "Non-Tidal Residual"), ("10-3", "Peaks Over Threshold")),
 )
 
 # Bundled NOAA CO-OPS stations (id|label); the front-ends fetch
@@ -154,6 +156,9 @@ OUTPUTS = (
     # Panel 2 (group "detr"): detrended level with the horizontal datum.
     Out("profile_detrended", "Profile: detrended", "m", "ft", "profile", group="detr"),
     Out("profile_datum", "Profile: datum", "m", "ft", "profile", group="detr"),
+    # full-resolution detrended series for the workflow hand-off (emitted only when
+    # the `handoff` input is set); carried into 10-2 / 10-3. Not shown or plotted.
+    Out("handoff_csv", "handoff", "", "", "data"),
 )
 
 
@@ -171,6 +176,7 @@ class Result:
     profile_trend: np.ndarray
     profile_detrended: np.ndarray
     profile_datum: np.ndarray
+    handoff_csv: str = ""
     notes: str = ""
 
 
@@ -184,6 +190,8 @@ def _decimal_year(s: str) -> float:
     s = s.strip()
     sep = " " if " " in s else ("T" if "T" in s else "")
     datepart, timepart = (s.split(sep, 1) if sep else (s, ""))
+    if "-" not in datepart:          # bare (decimal) calendar year, e.g. a hand-off "year"
+        return float(datepart)
     p = datepart.split("-")
     y = int(p[0])
     mo = int(p[1]) if len(p) > 1 and p[1] else 1
@@ -320,12 +328,19 @@ def compute(inp: dict) -> Result:
     if len(t) != len(pt):
         notes.append(f"plot strided to {len(pt)} of {len(t)} points (fit uses all)")
 
+    handoff = ""
+    if inp.get("handoff"):           # full-resolution detrended series for the next app
+        handoff = "year,detrended\n" + "\n".join(
+            f"{tt:.6f},{'' if not math.isfinite(vv) else format(vv, '.6f')}"
+            for tt, vv in zip(t.tolist(), detrended.tolist()))
+
     return Result(
         slope_per_year=slope, pivot_year=pivot, total_trend=total_trend,
         record_years=record_years, n_samples=float(n), rms_residual=rms,
         pivot_line=(pivot if use_pivot else float("nan")),
         profile_year=pt, profile_original=po, profile_trend=ptr,
-        profile_detrended=pdt, profile_datum=pdatum, notes="; ".join(notes),
+        profile_detrended=pdt, profile_datum=pdatum, handoff_csv=handoff,
+        notes="; ".join(notes),
     )
 
 

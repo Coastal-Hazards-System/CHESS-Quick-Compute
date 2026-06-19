@@ -175,6 +175,8 @@ def _decimal_year(s: str) -> float:
     s = s.strip()
     sep = " " if " " in s else ("T" if "T" in s else "")
     datepart, timepart = (s.split(sep, 1) if sep else (s, ""))
+    if "-" not in datepart:          # bare (decimal) calendar year, e.g. a hand-off "year"
+        return float(datepart)
     p = datepart.split("-")
     y = int(p[0]); mo = int(p[1]) if len(p) > 1 and p[1] else 1
     d = int(p[2]) if len(p) > 2 and p[2] else 1
@@ -315,7 +317,11 @@ def compute(inp: dict) -> Result:
         threshold, peak_idx, rate, fpct = last
         converged = False
     else:
-        raise ValueError("no exceedances found; lower the start percentile")
+        # no exceedances at any scanned percentile (e.g. a flat / near-constant
+        # series); report zero peaks rather than failing
+        threshold = float(sorted_desc[0])
+        peak_idx = np.empty(0, dtype=np.int64)
+        rate, fpct, converged = 0.0, start_pct, False
 
     # rank-trim to exactly round(target * eff_dur) largest peaks (deterministic)
     n_keep = int(round(target * eff_dur))

@@ -286,6 +286,52 @@ function buildForm() {
     box.appendChild(row);
   }
   applyShowIf();
+  buildWorkflowButtons();
+  applyHandoff();
+}
+
+// --- area-10 workflow: "send to next app" buttons + in-memory series hand-off ---
+// The web app-switcher (loadApp) does not reload the page, so a JS variable carries
+// the full-resolution series between steps without storage limits.
+function buildWorkflowButtons() {
+  const wf = $("workflow");
+  if (!wf) return;
+  wf.innerHTML = "";
+  const nexts = contract.meta.next_apps || [];
+  for (const [tid, tlabel] of nexts) {
+    const btn = document.createElement("button");
+    btn.className = "wf-btn";
+    btn.textContent = `Send to ${tid} ${tlabel} →`;
+    btn.addEventListener("click", () => nextStep(tid));
+    wf.appendChild(btn);
+  }
+  wf.style.display = nexts.length ? "" : "none";
+}
+
+function nextStep(targetId) {
+  // re-run the current app asking for its full-resolution series, then carry it forward
+  let res;
+  try {
+    const inp = gatherSI(); inp.handoff = "1";
+    res = JSON.parse(bridge.run(appmod, JSON.stringify(inp)));
+  } catch (e) { setStatus(String(e), false); return; }
+  if (res._error) { setStatus(res._error, false); return; }
+  window.CHESSQC_HANDOFF = { csv: res.handoff_csv || "",
+                            label: `from ${contract.meta.aces_id} ${contract.meta.name}` };
+  history.pushState({ app: targetId }, "", `?app=${encodeURIComponent(targetId)}`);
+  loadApp(targetId);
+}
+
+function applyHandoff() {
+  const h = window.CHESSQC_HANDOFF;
+  if (!h || !h.csv) return;
+  const block = document.querySelector('[data-csv="1"]');   // first CSV field of the target
+  if (block) {
+    block._csvText = h.csv;
+    const st = block.querySelector("span.unit");
+    if (st) st.textContent = `← ${h.label}`;
+  }
+  window.CHESSQC_HANDOFF = null;
 }
 
 // Hide inputs whose `show_if: [otherKey, value]` condition is not currently met
@@ -391,7 +437,7 @@ function render(res) {
   // scalar/point value rows
   const vbox = $("values"); vbox.innerHTML = "";
   for (const o of contract.outputs) {
-    if (["profile", "grid", "vline", "scatter", "scatter_x"].includes(o.kind) || !(o.key in res)) continue;
+    if (["profile", "grid", "vline", "scatter", "scatter_x", "data"].includes(o.kind) || !(o.key in res)) continue;
     const u = outUnit(o), raw = res[o.key];
     // numeric -> convert+format; string (a label like "Beta-Rayleigh", or an inf/nan
     // sentinel from the bridge) -> show as-is with the unit appended when present
@@ -755,7 +801,7 @@ function reportText() {
   }
   s += "\nOutputs:\n";
   for (const o of contract.outputs) {
-    if (o.kind === "profile" || o.kind === "grid" || o.kind === "vline" || !lastRes || !(o.key in lastRes)) continue;
+    if (["profile", "grid", "vline", "scatter", "scatter_x", "data"].includes(o.kind) || !lastRes || !(o.key in lastRes)) continue;
     const u = outUnit(o), raw = lastRes[o.key];
     const txt = typeof raw === "number"
       ? `${fmtNum(fromSI(raw, u))} ${u}`.trim()

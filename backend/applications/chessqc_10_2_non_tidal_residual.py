@@ -45,6 +45,7 @@ class AppMeta:
     default_system: str = "SI"
     status: str = "Current"
     superseded_by: str = ""
+    next_apps: tuple = ()      # workflow "Next" targets: ((id, label), ...) carrying the series
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,7 @@ APP_META = AppMeta(
     classification="standard",
     cite="NOAA CO-OPS tide/residual practice; PyStorm NTR",
     default_system="SI",
+    next_apps=(("10-3", "Peaks Over Threshold"),),
 )
 
 STATIONS = (
@@ -132,6 +134,9 @@ OUTPUTS = (
     Out("profile_wl", "Profile: water level", "m", "ft", "profile", group="obs"),
     Out("profile_tide", "Profile: tide", "m", "ft", "profile", group="obs"),
     Out("profile_ntr", "Profile: NTR", "m", "ft", "profile", group="ntr"),
+    # full-resolution NTR series for the workflow hand-off into 10-3 (emitted only
+    # when the `handoff` input is set). Not shown or plotted.
+    Out("handoff_csv", "handoff", "", "", "data"),
 )
 
 
@@ -145,6 +150,7 @@ class Result:
     profile_wl: np.ndarray
     profile_tide: np.ndarray
     profile_ntr: np.ndarray
+    handoff_csv: str = ""
     notes: str = ""
 
 
@@ -156,6 +162,8 @@ def _decimal_year(s: str) -> float:
     s = s.strip()
     sep = " " if " " in s else ("T" if "T" in s else "")
     datepart, timepart = (s.split(sep, 1) if sep else (s, ""))
+    if "-" not in datepart:          # bare (decimal) calendar year, e.g. a hand-off "year"
+        return float(datepart)
     p = datepart.split("-")
     y = int(p[0]); mo = int(p[1]) if len(p) > 1 and p[1] else 1
     d = int(p[2]) if len(p) > 2 and p[2] else 1
@@ -237,10 +245,15 @@ def compute(inp: dict) -> Result:
     pyear, pwl, ptide, pntr = _decimate(t_wl, v_wl, tide_at_wl, ntr)
     notes = (f"NTR = WL - tide; {int(fin.sum())} overlapping samples; "
              f"mean {mean_ntr:.3f} m, RMS {rms_ntr:.3f} m, max {max_ntr:.3f} m")
+    handoff = ""
+    if inp.get("handoff"):           # full-resolution NTR series for the next app
+        handoff = "year,ntr\n" + "\n".join(
+            f"{tt:.6f},{'' if not math.isfinite(vv) else format(vv, '.6f')}"
+            for tt, vv in zip(t_wl.tolist(), ntr.tolist()))
     return Result(
         mean_ntr=mean_ntr, rms_ntr=rms_ntr, max_ntr=max_ntr, n_samples=float(fin.sum()),
         profile_year=pyear, profile_wl=pwl, profile_tide=ptide, profile_ntr=pntr,
-        notes=notes,
+        handoff_csv=handoff, notes=notes,
     )
 
 

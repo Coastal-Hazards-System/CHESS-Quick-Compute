@@ -17,6 +17,10 @@ from common import units
 from . import settings
 from .theme import get_plot_palette, vibe_label_opts
 
+# area-10 workflow hand-off: the upstream window stows its full-resolution series
+# here; the next window injects it into its first CSV field on open, then clears it.
+_HANDOFF: dict = {}
+
 # bundled station CSVs live at the repo root: data/<data_dir>/<id>.csv
 _DATA_ROOT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -64,8 +68,25 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         self.setWindowTitle(f"CHESS-QC · {self.meta.aces_id} {self.meta.name}")
         self._build_ui()
         self.resize(960, 700)
+        self._apply_handoff()   # inject a series carried from the previous workflow step
         self._on_compute()  # populate inputs/outputs from defaults (no CSV fetch)
         self._focus_first_input()
+
+    def _apply_handoff(self):
+        """If a previous workflow step stowed a series, inject it into this app's
+        first CSV field (e.g. detrended WL -> 10-2/10-3; NTR -> 10-3)."""
+        h = _HANDOFF.pop("series", None) if _HANDOFF else None
+        if not h:
+            return
+        for f in self.inputs:
+            if f.kind == "csv":
+                w = self._widgets.get(f.key)
+                if w is not None:
+                    w._csv_text = h.get("csv", "")
+                    w._combo.blockSignals(True); w._combo.setCurrentIndex(0); w._combo.blockSignals(False)
+                    w._last_idx = 0
+                    w._status.setText(f"← {h.get('label', 'from previous step')}")
+                break
 
     def _focus_first_input(self):
         """Focus the first input widget on open (parity with the web front-end)."""
@@ -250,7 +271,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         rows = QtWidgets.QWidget()
         self._rows_form = QtWidgets.QFormLayout(rows)
         for o in self.outputs:
-            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x"):
+            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x", "data"):
                 continue
             lab = QtWidgets.QLabel("-")
             lab.setObjectName("resultValue")
@@ -259,6 +280,17 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             name = self._field_label(o.label)
             self._rows_form.addRow(name, lab)
         v.addWidget(rows)
+        # area-10 workflow: "send to next app" buttons (carry the series forward)
+        nexts = getattr(self.meta, "next_apps", ()) or ()
+        if nexts and self._on_switch is not None:
+            wf = QtWidgets.QHBoxLayout()
+            for tid, tlabel in nexts:
+                b = QtWidgets.QPushButton(f"Send to {tid} {tlabel} →")
+                b.setObjectName("WorkflowBtn")
+                b.clicked.connect(lambda _=False, t=tid: self._next_step(t))
+                wf.addWidget(b)
+            wf.addStretch(1)
+            v.addLayout(wf)
         # tabs: Plot | Table  (only if the app has profile or grid outputs)
         self._has_profiles = any(o.kind == "profile" for o in self.outputs)
         self._has_grid = any(o.kind == "grid" for o in self.outputs)
@@ -519,7 +551,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
     def _render(self, r):
         # scalar/point value rows (convert SI -> current unit)
         for o in self.outputs:
-            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x"):
+            if o.kind in ("profile", "grid", "vline", "scatter", "scatter_x", "data"):
                 continue
             val_si = getattr(r, o.key, None)
             if val_si is None:
@@ -709,6 +741,21 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             ax.tick_params(labelbottom=False)
         axes[-1].set_xlabel(f"{xlab} ({xu})", fontsize=8, color=pal["fg"])
         canvas.draw_idle()
+
+    def _next_step(self, target_id: str):
+        """Re-run this app for its full-resolution series, stow it, and open the
+        target app, which injects the series into its first CSV field on open."""
+        try:
+            inp = self._gather_si()
+            inp["handoff"] = "1"
+            r = self.app.compute(inp)
+        except Exception as exc:
+            self._set_status(f"cannot hand off: {exc}", ok=False)
+            return
+        _HANDOFF["series"] = {"csv": getattr(r, "handoff_csv", ""),
+                              "label": f"from {self.meta.aces_id} {self.meta.name}"}
+        if self._on_switch is not None:
+            self._on_switch(target_id)
 
     def _pop_out_plot(self):
         """Open the current plot in a separate, larger, resizable window with its own

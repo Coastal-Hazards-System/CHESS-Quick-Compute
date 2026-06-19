@@ -293,3 +293,9 @@ main.landing { display: block; max-width: 1100px; margin: 0 auto; padding: 16px;
 .plot-modal-bar .spacer { flex: 1; }
 #plotBig { flex: 1; width: 100%; height: 100%; min-height: 0; display: block; cursor: grab; }
 #plot { cursor: grab; }
+
+/* area-10 workflow "send to next app" bar */
+.workflow { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.workflow .wf-btn { background: var(--accent, #008cb0); color: #fff; border: none;
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.workflow .wf-btn:hover { filter: brightness(1.08); }
