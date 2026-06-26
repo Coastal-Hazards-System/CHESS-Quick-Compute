@@ -162,6 +162,58 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Evaluates the fully-reflecting vertical-wedge diffraction/reflection solution '
+            '(Chen 1987 eigenfunction series) at every node of a uniform X-Y grid around '
+            'the wedge apex, returning fields of the wave-height modification factor, the '
+            'modified wave height, and the phase relative to the incident wave.',
+ 'methods': [{'name': 'Chen (1987) wedge eigenfunction series on a uniform grid',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\phi(r,\\theta) = \\frac{2}{\\nu}\\left[ J_{0}(kr) + '
+                                    '2\\sum_{n=1}^{\\infty} e^{i n \\pi/(2\\nu)} '
+                                    'J_{n/\\nu}(kr)\\cos\\left(\\frac{n\\alpha}{\\nu}\\right)\\cos\\left(\\frac{n\\theta}{\\nu}\\right) '
+                                    '\\right]',
+                             'desc': 'Complex horizontal-plane potential at grid radius r '
+                                     'and angle theta from the wedge apex (Chen 1987 '
+                                     'Bessel eigenfunction series)'},
+                            {'tex': '\\nu = \\frac{\\theta_{0}}{\\pi}, \\quad \\theta_{0} '
+                                    '= 2\\pi - \\theta_{w}',
+                             'desc': 'Wedge parameter from the water-domain opening angle '
+                                     'theta_0 (theta_w is the solid wedge angle); '
+                                     'semi-infinite breakwater is theta_w = 0 so nu = 2'},
+                            {'tex': '\\omega^{2} = g\\,k\\tanh(kh)',
+                             'desc': 'Linear dispersion relation giving wavenumber k = 2 '
+                                     'pi / L (and wavelength L) from period and depth'},
+                            {'tex': '|\\phi| = \\sqrt{(\\mathrm{Re}\\,\\phi)^{2} + '
+                                    '(\\mathrm{Im}\\,\\phi)^{2}}',
+                             'desc': 'Wave-height modification factor (= '
+                                     'diffraction/reflection coefficient); modified height '
+                                     'H = |phi| H_i'},
+                            {'tex': '\\beta = '
+                                    '\\tan^{-1}\\left(\\frac{\\mathrm{Im}\\,\\phi}{\\mathrm{Re}\\,\\phi}\\right) '
+                                    '- k\\,r\\cos\\alpha',
+                             'desc': 'Phase of the modified wave relative to the incident '
+                                     'wave'}]}],
+ 'symbols': [['phi', 'Complex horizontal-plane velocity potential at a grid point'],
+             ['|phi|',
+              'Wave-height modification factor (diffraction/reflection coefficient)'],
+             ['H_i', 'Incident wave height (modified height = |phi| H_i)'],
+             ['k', 'Wavenumber, 2 pi / L'],
+             ['L', 'Wavelength from the dispersion relation'],
+             ['r', 'Radial distance from the wedge apex to the grid point'],
+             ['theta', 'Angular position of the grid point measured from the wedge face'],
+             ['alpha', 'Incident wave angle'],
+             ['nu', 'Wedge parameter, theta_0 / pi'],
+             ['J_{n/nu}', 'Bessel function of the first kind, order n/nu']],
+ 'references': ['Chen (1987) CERC-87-16',
+                'Stoker (1957)',
+                'Penny & Price (1952)',
+                'SPM (1984)',
+                "ACES User's Guide, Application 3-4 (gridded companion to 3-3)"]}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Wedge modification-factor / height / phase field over a uniform grid (SI inputs)."""
     _validate(inp)

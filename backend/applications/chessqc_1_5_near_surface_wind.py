@@ -194,6 +194,67 @@ def _solve_u_star(G_cgs: float, f: float) -> float:
     return 0.5 * (lo + hi)
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Given the free-atmosphere geostrophic wind, air-sea temperature difference, '
+            'latitude, and a height z, this app solves the planetary-boundary-layer '
+            'resistance law for the friction velocity and then evaluates the '
+            'stability-corrected surface-layer profile. It returns U*, the wind speed at z '
+            'and at 10 m, the drag coefficients, the sea-surface roughness length, the '
+            'Monin-Obukhov length and stability function, the surface momentum flux, and '
+            'the cross-isobar angle.',
+ 'methods': [{'name': 'Geostrophic-drag resistance law with Monin-Obukhov surface-layer '
+                      'profile',
+              'when': None,
+              'tag': '',
+              'note': 'Friction velocity is found from the neutral Rossby-number '
+                      'similarity (resistance) law by iteration; air-sea temperature '
+                      'difference then sets the Obukhov length and the Businger-Dyer '
+                      'stability function that shape the surface-layer profile.',
+              'equations': [{'tex': '| V_g | = '
+                                    '\\frac{U_*}{k}\\sqrt{\\left(\\ln\\frac{U_*}{f\\,z_0} '
+                                    '- A\\right)^2 + B^2}',
+                             'desc': 'Neutral geostrophic-drag (Rossby-number similarity) '
+                                     'law; solved by iteration for U* given |V_g|, the '
+                                     'Coriolis parameter f, and z_0 (A approx 1.8, B '
+                                     'approx 4.5).'},
+                            {'tex': 'z_0 = \\frac{C_1}{U_*} + C_2\\,U_*^2 + C_3',
+                             'desc': 'ACES sea-surface roughness length as a function of '
+                                     'U* (cgs constants C_1=0.1525, C_2=0.019/980, '
+                                     'C_3=-0.00371).'},
+                            {'tex': 'U_z = \\frac{U_*}{k}\\left[\\ln\\frac{z}{z_0} - '
+                                    "\\Psi\\!\\left(\\frac{z}{L'}\\right)\\right]",
+                             'desc': 'Stability-corrected logarithmic surface-layer wind '
+                                     'profile; the same form gives U10 (z = 10 m).'},
+                            {'tex': "L' = 1.79\\,\\frac{U_*^2}{\\Delta "
+                                    'T}\\left[\\ln\\frac{z}{z_0} - \\Psi\\right]',
+                             'desc': 'Bulk Monin-Obukhov stability length set by the '
+                                     'air-sea temperature difference; solved '
+                                     'self-consistently with Psi.'},
+                            {'tex': '\\sin\\alpha = -\\frac{B\\,U_*}{k\\,| V_g |}',
+                             'desc': 'Cross-isobar angle between the geostrophic wind and '
+                                     'the surface stress.'},
+                            {'tex': '\\tau = \\rho_a\\,U_*^2',
+                             'desc': 'Surface momentum flux; the drag coefficient at any '
+                                     'level is C_D = (U_* / U)^2.'}]}],
+ 'symbols': [['V_g', 'Free-atmosphere geostrophic wind speed (magnitude)'],
+             ['U_*', 'Friction velocity (surface shear velocity)'],
+             ['U_z', 'Wind speed at height z (and U10 at 10 m)'],
+             ['z_0', 'Sea-surface roughness length'],
+             ['k', 'Von Karman constant (approx 0.40)'],
+             ['f', 'Coriolis parameter, f = 2 Omega sin(lat)'],
+             ["L'", 'Monin-Obukhov stability (Obukhov) length'],
+             ['Psi', "Businger-Dyer momentum stability function of z/L'"],
+             ['Delta T', 'Air-sea temperature difference (T_air - T_sea)'],
+             ['C_D',
+              'Drag coefficient, (U_*/U)^2; tau is the momentum flux, rho_a air density, '
+              'alpha cross-isobar angle']],
+ 'references': ['Garratt (1992), The Atmospheric Boundary Layer',
+                'Blackadar & Tennekes (1968)',
+                'ACES Technical Reference 1-1 (eqs 5-13)',
+                'Lumley & Panofsky (1964)',
+                'ACES help manual, Near-surface wind speeds']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Near-surface wind from the geostrophic wind, dT, latitude, and height (SI in/out)."""
     _validate(inp)

@@ -125,6 +125,61 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the beach-fill overfill ratio R_A (how much borrow sand must be '
+            'placed to obtain one unit of usable beach), the renourishment factor R_J (how '
+            'much faster the borrow sand erodes than native sand), and the resulting '
+            'design (borrow) volume, from the phi-mean and phi-sorting of the native and '
+            'borrow sands.',
+ 'methods': [{'name': 'James (1975) overfill ratio and renourishment factor',
+              'when': None,
+              'tag': '',
+              'note': 'Closed-form James (1975) formulas; identical borrow and native '
+                      'sands give R_A = R_J = 1.',
+              'equations': [{'tex': '\\delta = \\frac{M_{\\phi b} - M_{\\phi '
+                                    'n}}{\\sigma_{\\phi n}}',
+                             'desc': 'Scaled phi-mean difference; delta > 0 means borrow '
+                                     'is finer than native, delta < 0 coarser.'},
+                            {'tex': '\\sigma = \\frac{\\sigma_{\\phi b}}{\\sigma_{\\phi '
+                                    'n}}',
+                             'desc': 'Phi sorting ratio; sigma > 1 borrow more poorly '
+                                     'sorted, sigma < 1 better sorted.'},
+                            {'tex': '\\frac{1}{R_A} = 1 - '
+                                    'F\\!\\left(\\frac{\\theta_2-\\delta}{\\sigma}\\right) '
+                                    '+ '
+                                    'F\\!\\left(\\frac{\\theta_1-\\delta}{\\sigma}\\right) '
+                                    '+ '
+                                    '\\frac{F(\\theta_2)-F(\\theta_1)}{\\sigma}\\,\\exp\\!\\left[\\frac{1}{2}\\left(\\theta_1^{2} '
+                                    '- '
+                                    '\\left(\\frac{\\theta_1-\\delta}{\\sigma}\\right)^{2}\\right)\\right]',
+                             'desc': 'Overfill ratio R_A (James 1975), F the '
+                                     'standard-normal CDF; thresholds set by category.'},
+                            {'tex': 'R_J = \\exp\\!\\left[\\Delta\\,\\delta - '
+                                    '\\frac{\\Delta^{2}}{2}\\left(\\sigma^{2} - '
+                                    '1\\right)\\right]',
+                             'desc': 'Renourishment factor; Delta is the winnowing '
+                                     'function (recommended 1.0).'},
+                            {'tex': 'VOL_D = VOL_I \\cdot R_A',
+                             'desc': 'Design (borrow) volume to place for a target usable '
+                                     'fill volume VOL_I.'}]}],
+ 'symbols': [['R_A', 'Overfill ratio: borrow volume needed per unit of usable beach fill'],
+             ['R_J',
+              'Renourishment factor: relative erosion rate of borrow vs native sand'],
+             ['VOL_D', 'Design (borrow) volume to place'],
+             ['VOL_I', 'Target volume of usable beach fill'],
+             ['delta', 'Scaled phi-mean difference (M_b - M_n)/sigma_n'],
+             ['sigma', 'Phi sorting ratio sigma_b/sigma_n'],
+             ['M_phi', 'Phi grain-size mean of the sand (b=borrow, n=native)'],
+             ['sigma_phi', 'Phi sorting (standard deviation) of the sand'],
+             ['theta_1, theta_2',
+              'Category-dependent integration thresholds (Table 6-4-1)'],
+             ['Delta', 'Winnowing function in R_J (recommended 1.0)']],
+ 'references': ['James (1975) TM-60',
+                'SPM (1984)',
+                'Krumbein (1957)',
+                'EQUATIONS.md TR 6-4']}
+
+
 def compute(inp: dict) -> Result:
     """Overfill ratio, renourishment factor, and design volume for SI inputs."""
     _validate(inp)

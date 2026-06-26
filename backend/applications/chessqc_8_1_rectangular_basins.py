@@ -164,6 +164,81 @@ def _period_1d(basin_type: str, j: int, lB: float, c: float) -> float:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the natural (resonant) seiche periods of a rectangular harbor or '
+            'basin and the standing-wave water-particle kinematics at a node. Supports '
+            'open and closed 1-D basins, the 2-D (Merian) extension, and the Helmholtz '
+            'pumping mode for a basin connected to the sea by an entrance channel.',
+ 'method_key': 'basin_type',
+ 'methods': [{'name': 'Open basin (one end open, quarter-wave)',
+              'when': 'Open (one end open)',
+              'tag': 'standard',
+              'note': 'One open end; modes are odd quarter-wavelengths, n = 0,1,2,... with '
+                      'n = 0 the fundamental.',
+              'equations': [{'tex': 'c = \\sqrt{g\\,d}',
+                             'desc': 'Shallow-water celerity used for all seiche periods '
+                                     '(depth small vs wavelength).'},
+                            {'tex': 'T_{n} = \\frac{4\\,l_{B}}{(2n+1)\\,\\sqrt{g\\,d}}',
+                             'desc': 'Resonant period of longitudinal mode n for a basin '
+                                     'open at one end.'},
+                            {'tex': 'u_{max} = \\frac{\\pi H}{T}\\,\\frac{\\cosh(k '
+                                    'd)}{\\sinh(k d)}',
+                             'desc': 'Horizontal velocity amplitude at the node (surface) '
+                                     'of the standing wave (clapotis).'}]},
+             {'name': 'Closed basin (both ends, half-wave) — Merian',
+              'when': 'Closed (both ends)',
+              'tag': 'standard',
+              'note': 'Both ends closed; modes are integer half-wavelengths, n = 1,2,3,...',
+              'equations': [{'tex': 'c = \\sqrt{g\\,d}', 'desc': 'Shallow-water celerity.'},
+                            {'tex': 'T_{n} = \\frac{2\\,l_{B}}{n\\,\\sqrt{g\\,d}}',
+                             'desc': "Merian's formula: resonant period of longitudinal "
+                                     'mode n for a closed basin.'},
+                            {'tex': 'u_{max} = \\frac{\\pi H}{T}\\,\\frac{\\cosh(k '
+                                    'd)}{\\sinh(k d)}',
+                             'desc': 'Horizontal velocity amplitude at the node (surface) '
+                                     'of the standing wave.'}]},
+             {'name': 'Closed 2-D rectangular (Merian extension)',
+              'when': 'Closed 2-D (rectangular)',
+              'tag': 'standard',
+              'note': 'Two-dimensional modes (n,m); setting one index to zero recovers the '
+                      '1-D longitudinal mode.',
+              'equations': [{'tex': 'T_{n,m} = '
+                                    '\\frac{2}{\\sqrt{g\\,d}\\,\\sqrt{\\left(\\frac{n}{l_{B}}\\right)^{2} '
+                                    '+ \\left(\\frac{m}{l_{C}}\\right)^{2}}}',
+                             'desc': 'Resonant period of the (n,m) mode of a closed '
+                                     'rectangular basin.'},
+                            {'tex': 'c = \\sqrt{g\\,d}',
+                             'desc': 'Shallow-water celerity.'}]},
+             {'name': 'Helmholtz pumping mode (basin + channel)',
+              'when': 'Helmholtz (basin + channel)',
+              'tag': 'standard',
+              'note': 'Whole basin rises and falls through the entrance channel; no '
+                      'internal nodes. Length correction accounts for added mass at the '
+                      'mouth.',
+              'equations': [{'tex': 'T_{H} = 2\\pi\\,\\sqrt{\\frac{(L_{ch} + '
+                                    'L_{corr})\\,A_{b}}{g\\,A_{c}}}',
+                             'desc': 'Helmholtz (pumping) resonance period for a basin '
+                                     'connected to the sea by a channel.'}]}],
+ 'symbols': [['T_n', 'Resonant period of longitudinal mode n (s)'],
+             ['T_{n,m}', 'Resonant period of 2-D mode (n,m) (s)'],
+             ['T_H', 'Helmholtz pumping-mode period (s)'],
+             ['c', 'Shallow-water celerity, sqrt(g d) (m/s)'],
+             ['l_B', 'Basin length along the resonant (longitudinal) axis (m)'],
+             ['l_C', 'Basin width, transverse dimension, 2-D only (m)'],
+             ['d', 'Mean basin water depth (m)'],
+             ['n, m', 'Longitudinal and transverse mode numbers'],
+             ['H', 'Standing-wave (antinode) crest-to-trough height (m)'],
+             ['A_b, A_c',
+              'Basin plan area and channel cross-section area; L_ch, L_corr are channel '
+              'length and mouth length correction']],
+ 'references': ["Merian's formula",
+                'Helmholtz mode',
+                'SPM (1984)',
+                'Wilson (1972)',
+                'Sorensen (1993)',
+                'Ippen (1966)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, n_modes: int = 6) -> Result:
     """Rectangular-basin resonance and node kinematics for SI inputs."""
     _validate(inp)

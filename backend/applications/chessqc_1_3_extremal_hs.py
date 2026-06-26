@@ -156,6 +156,59 @@ def _lsq(xs, ys):
     return A, B, corr, sxx
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Fits extremal probability distributions (FT-I/Gumbel and Weibull with k = '
+            '0.75, 1.0, 1.4, 2.0) to a sample of storm significant wave heights using Goda '
+            'plotting positions and a least-squares regression on the reduced variate. It '
+            'returns the best-fit distribution and the design significant wave heights at '
+            'return periods of 2-100 years, with confidence intervals.',
+ 'methods': [{'name': 'Goda extremal fit (FT-I + Weibull, least-squares on plotting '
+                      'positions)',
+              'when': None,
+              'tag': '',
+              'note': 'All five candidates (FT-I and Weibull k = 0.75, 1.0, 1.4, 2.0) are '
+                      'fitted; the one with the smallest residual sum (highest '
+                      'correlation) is selected per eq (12).',
+              'equations': [{'tex': 'F(H_s \\leq \\hat{H}_s) = \\exp\\left[ -\\exp\\left( '
+                                    '-\\frac{\\hat{H}_s - B}{A} \\right) \\right]',
+                             'desc': 'FT-I (Gumbel) non-exceedance distribution; A = '
+                                     'scale, B = location (eq 1)'},
+                            {'tex': 'F(H_s \\leq \\hat{H}_s) = 1 - \\exp\\left[ -\\left( '
+                                    '\\frac{\\hat{H}_s - B}{A} \\right)^{k} \\right]',
+                             'desc': 'Weibull non-exceedance distribution with shape '
+                                     'parameter k (eq 2)'},
+                            {'tex': 'F(H_s \\leq H_{sm}) = 1 - \\frac{m - 0.44}{N_T + '
+                                    '0.12}',
+                             'desc': 'Goda plotting position for the m-th ranked height '
+                                     '(FT-I form; Weibull uses k-dependent constants) (eq '
+                                     '3)'},
+                            {'tex': 'H_{sr} = \\hat{A}\\, y_r + \\hat{B}',
+                             'desc': 'Return-period significant height from the LS line, '
+                                     'with y_r the return-period reduced variate at '
+                                     'lambda*T_r, lambda = N_T/K (eqs 6-7)'},
+                            {'tex': '\\sigma_{nr} = \\frac{1}{\\sqrt{N}}\\sqrt{ 1 + '
+                                    '\\alpha\\,(y_r - c + \\epsilon\\,\\ln\\nu)^2 }',
+                             'desc': 'Normalized standard deviation of the return value; '
+                                     'the confidence band is H_sr +/- z*sigma_nr*sigma_Hs '
+                                     '(eqs 8-10)'}]}],
+ 'symbols': [['H_s', 'significant wave height (per storm/event)'],
+             ['H_{sr}', 'significant height at return period T_r'],
+             ['F', 'probability of H_s not being exceeded (non-exceedance)'],
+             ['A, B', 'scale and location parameters (LS estimates Â, B̂)'],
+             ['k', 'Weibull shape parameter (0.75, 1.0, 1.4, 2.0)'],
+             ['y_r', 'return-period reduced variate'],
+             ['m', 'rank of the height in the descending-sorted sample (1..N)'],
+             ['N_T', 'total number of events during the record'],
+             ['lambda', 'average events per year, lambda = N_T/K (K = record length, yr)'],
+             ['nu', 'censoring parameter, nu = N/N_T']],
+ 'references': ['Goda (1988)',
+                'Gringorten (1963)',
+                'Petrauskas & Aagaard (1970)',
+                'Gumbel (1958)',
+                'EM 1110-2-1414 (Ch. 5)',
+                'ACES TR 1-3']}
+
+
 def compute(inp: dict, *, g=None) -> Result:
     """Extremal analysis for SI inputs (heights in m). `heights` is a table -> list
     of rows; each row's first cell is one significant wave height."""

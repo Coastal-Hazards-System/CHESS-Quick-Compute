@@ -202,6 +202,53 @@ def _dispersion_k(C: float, d: float, g: float) -> float:
     return k
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'For a design vessel moving at a given speed through a prismatic channel, this '
+            'app computes the depth Froude number, the generated wave system (celerity, '
+            'period, wavelength and crest-angle to the sailing line) from Kelvin/Havelock '
+            'ship-wave theory, and the Schijf (1949) one-dimensional return current and '
+            'drawdown (water-level depression) alongside the vessel.',
+ 'methods': [{'name': 'Schijf 1-D return flow with Kelvin/Havelock wave kinematics',
+              'when': None,
+              'tag': '',
+              'note': 'A subcritical Schijf solution exists only below the limiting speed '
+                      'for the given blockage; above it the 1-D theory breaks down and the '
+                      'tangent (limiting) drawdown is flagged.',
+              'equations': [{'tex': 'F = \\frac{V_s}{\\sqrt{g\\,d}}',
+                             'desc': 'Depth Froude number; selects subcritical (F<1) '
+                                     'versus supercritical (F>=1) wake regime.'},
+                            {'tex': 'V_s\\,A_c = (V_s + V_r)\\,(A_c - A_m - b\\,\\delta h)',
+                             'desc': 'Schijf continuity between the undisturbed section '
+                                     'and the section alongside the vessel (A_c = b d).'},
+                            {'tex': '\\delta h = \\frac{(V_s + V_r)^2 - V_s^2}{2\\,g}',
+                             'desc': 'Schijf energy (Bernoulli) relation giving the '
+                                     'drawdown; solved simultaneously with continuity for '
+                                     'V_r and delta h.'},
+                            {'tex': 'C^2 = \\frac{g}{k}\\,\\tanh(k\\,d)',
+                             'desc': 'Finite-depth dispersion; for F<1 the transverse wave '
+                                     'travels with the vessel (C = V_s) setting period T = '
+                                     'L/C.'},
+                            {'tex': '\\theta = \\arcsin\\left(\\frac{1}{F}\\right)',
+                             'desc': 'Supercritical (F>=1) Mach crest angle; for F<1 the '
+                                     'diverging crests sit at the deep-water Kelvin angle '
+                                     "arctan(1/sqrt2) = 35deg16'."}]}],
+ 'symbols': [['F', 'Depth Froude number V_s/sqrt(g d)'],
+             ['V_s', 'Vessel speed through the water'],
+             ['V_r', 'Return current alongside the vessel'],
+             ['delta h', 'Drawdown (water-level depression alongside the vessel)'],
+             ['A_c', 'Channel cross-sectional area, b d'],
+             ['A_m', 'Submerged midship (wetted) cross-sectional area of the vessel'],
+             ['b', 'Prismatic channel top width'],
+             ['d', 'Still-water channel depth'],
+             ['C', 'Wave celerity'],
+             ['theta', 'Wave crest angle to the sailing line (Kelvin or Mach angle)']],
+ 'references': ['Schijf (1949) one-dimensional canal theory',
+                'PIANC (1987)',
+                'EM 1110-2-1100 Part II',
+                'Kelvin/Havelock ship-wave theory',
+                'ACES Manual, Vessel-Generated Waves']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Vessel-generated wave system and Schijf return flow for SI inputs."""
     _validate(inp)

@@ -190,6 +190,63 @@ def _k_with_current(omega: float, d: float, U: float, g: float):
     return 0.5 * (a + b), False
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes how a wave train is modified when it crosses a navigation channel '
+            'carrying a steady current. Returns the wavelength and wave-height '
+            'modification factors (relative to the no-current state), the effective Froude '
+            'number, and flags opposing-current wave blocking.',
+ 'methods': [{'name': 'Linear wave-current interaction (action conservation)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\omega = \\sigma + k U',
+                             'desc': 'Absolute (ground-frame) frequency is conserved; '
+                                     'intrinsic frequency sigma is Doppler-shifted by the '
+                                     'current component k U.'},
+                            {'tex': '\\sigma = \\sqrt{g k \\tanh(k d)}',
+                             'desc': 'Intrinsic (still-water) linear dispersion relation, '
+                                     'solved for the wavenumber k with and without '
+                                     'current.'},
+                            {'tex': 'U = V \\cos(\\alpha)',
+                             'desc': 'Current component along the wave-propagation '
+                                     'direction (alpha measured from the wave orthogonal '
+                                     'to the current).'},
+                            {'tex': 'C_{g} = \\frac{\\sigma}{2 k}\\left(1 + \\frac{2 k '
+                                    'd}{\\sinh(2 k d)}\\right)',
+                             'desc': 'Intrinsic group velocity d sigma / dk used in the '
+                                     'wave-action flux.'},
+                            {'tex': 'R_{H} = \\frac{H}{H_{0}} = '
+                                    '\\sqrt{\\frac{\\sigma}{\\omega}\\,\\frac{C_{g0}}{C_{g} '
+                                    '+ U}}',
+                             'desc': 'Wave-height factor from conservation of wave-action '
+                                     'flux (E/sigma)(Cg + U); subscript 0 is the '
+                                     'no-current state.'},
+                            {'tex': 'F = \\frac{U}{C_{g}}',
+                             'desc': 'Effective Froude number; an opposing current blocks '
+                                     'the waves as C_g + U -> 0 (F -> -1).'}]}],
+ 'symbols': [['omega',
+              'Absolute (ground-frame) angular frequency, 2 pi / T, conserved across the '
+              'current'],
+             ['sigma',
+              'Intrinsic (relative-to-current) angular frequency satisfying still-water '
+              'dispersion'],
+             ['k', 'Wavenumber, 2 pi / L (solved with and without current)'],
+             ['U', 'Current component along wave propagation, V cos(alpha)'],
+             ['V', 'Channel current speed (magnitude)'],
+             ['alpha',
+              'Angle between the wave orthogonal and the current (0 following, 180 '
+              'opposing)'],
+             ['d', 'Still-water channel depth'],
+             ['C_g', 'Intrinsic group velocity; C_{g0} is the no-current value'],
+             ['R_H', 'Wave-height modification factor H/H0'],
+             ['F', 'Effective Froude number U/Cg (-> -1 at blocking)']],
+ 'references': ['Jonsson (1990)',
+                'Jonsson, Skovgaard & Wang (1970)',
+                'Peregrine (1976)',
+                "ACES Technical Reference / User's Guide, App. 7-2 Wave-Current "
+                'Interaction in Channels']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Wave-current interaction across a channel for SI inputs."""
     _validate(inp)

@@ -369,6 +369,90 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute --------------------------------------------------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Adjusts an observed wind to a 10-m equivalent-neutral wind, linearizes it to '
+            'the constant-drag "adjusted" wind used by the growth laws, then estimates '
+            'fetch- or duration-limited wave growth, returning the equivalent/adjusted '
+            'wind speeds plus the significant wave height H_mo and peak period T_p (deep '
+            'or shallow water, open or restricted fetch).',
+ 'method_key': 'wave_eq',
+ 'methods': [{'name': 'Deep-water wave growth',
+              'when': 'Deep',
+              'tag': 'standard',
+              'note': 'Hasselmann/SPM deepwater fetch- and duration-limited growth driven '
+                      'by the adjusted wind U_a; restricted fetch substitutes the '
+                      'fetch-parallel component U_a cos(phi).',
+              'equations': [{'tex': 'u_{*} = \\frac{k\\,U_{obs}}{\\ln(z_{obs}/z_0)}',
+                             'desc': 'Constant-stress friction velocity from the observed '
+                                     'wind (eq 3); z_0 from eq 6, iterated to '
+                                     'convergence.'},
+                            {'tex': 'U_e = \\frac{u_{*}}{k}\\,\\ln\\frac{1000}{z_0}',
+                             'desc': '10-m equivalent-neutral wind, cgs 1000 cm = 10 m (eq '
+                                     '13); a 0.9 factor is applied for fetch < 16 km (eq '
+                                     '20).'},
+                            {'tex': 'C_D = 0.001\\,(0.75 + 0.067\\,U_e)',
+                             'desc': 'Garratt wind-stress drag coefficient (eq 24).'},
+                            {'tex': 'U_a = U_e\\,\\sqrt{C_D / 0.001}',
+                             'desc': 'Equivalent neutral wind linearized to constant drag '
+                                     'C_D = 0.001 (eq 25); this U_a drives the growth '
+                                     'laws.'},
+                            {'tex': 'H_{mo} = '
+                                    '0.0016\\,\\frac{U_a^{2}}{g}\\left(\\frac{g\\,F}{U_a^{2}}\\right)^{1/2}',
+                             'desc': 'Deepwater fetch-limited wave height (eq 33), capped '
+                                     'at the fully developed limit 0.2433 U_a^2/g (eqs '
+                                     '37,41).'},
+                            {'tex': 'T_p = '
+                                    '0.2857\\,\\frac{U_a}{g}\\left(\\frac{g\\,F}{U_a^{2}}\\right)^{1/3}',
+                             'desc': 'Deepwater fetch-limited peak period (eq 35), capped '
+                                     'at the fully developed limit 8.134 U_a/g (eqs '
+                                     '39,42).'}]},
+             {'name': 'Shallow-water wave growth',
+              'when': 'Shallow',
+              'tag': 'standard',
+              'note': 'SPM depth-limited (Bretschneider-Reid) fetch-limited forms with a '
+                      'constant fetch depth d; flagged interim in the TR. Same '
+                      'wind-adjustment chain as the deep-water method.',
+              'equations': [{'tex': 'u_{*} = \\frac{k\\,U_{obs}}{\\ln(z_{obs}/z_0)}',
+                             'desc': 'Constant-stress friction velocity from the observed '
+                                     'wind (eq 3).'},
+                            {'tex': 'U_e = \\frac{u_{*}}{k}\\,\\ln\\frac{1000}{z_0}',
+                             'desc': '10-m equivalent-neutral wind (eq 13).'},
+                            {'tex': 'U_a = U_e\\,\\sqrt{C_D / 0.001}',
+                             'desc': 'Adjusted constant-drag wind with C_D = 0.001(0.75 + '
+                                     '0.067 U_e) (eqs 24,25).'},
+                            {'tex': 'H_{mo} = '
+                                    '0.283\\,\\frac{U_a^{2}}{g}\\,\\tanh\\left[0.530\\left(\\frac{g\\,d}{U_a^{2}}\\right)^{0.75}\\right]\\tanh\\left[\\frac{0.00565\\,(g\\,F/U_a^{2})^{0.5}}{\\tanh[0.530(g\\,d/U_a^{2})^{0.75}]}\\right]',
+                             'desc': 'Shallow-water fetch-limited wave height with depth '
+                                     'limiting (eq 43).'},
+                            {'tex': 'T_p = '
+                                    '7.54\\,\\frac{U_a}{g}\\,\\tanh\\left[0.833\\left(\\frac{g\\,d}{U_a^{2}}\\right)^{0.375}\\right]\\tanh\\left[\\frac{0.03788\\,(g\\,F/U_a^{2})^{0.333}}{\\tanh[0.833(g\\,d/U_a^{2})^{0.375}]}\\right]',
+                             'desc': 'Shallow-water fetch-limited peak period with depth '
+                                     'limiting (eq 44).'}]}],
+ 'symbols': [['U_obs', 'Observed wind speed at elevation z_obs'],
+             ['z_obs', 'Elevation of the wind observation'],
+             ['z_0', 'Sea-surface roughness length (eq 6, iterated)'],
+             ['u_*', 'Friction velocity of the constant-stress layer'],
+             ['k', 'Von Karman constant (= 0.40)'],
+             ['U_e', '10-m equivalent-neutral wind speed'],
+             ['C_D', 'Wind-stress drag coefficient (Garratt)'],
+             ['U_a', 'Adjusted constant-drag wind driving the growth laws'],
+             ['F', 'Wind fetch length (restricted: effective radial fetch)'],
+             ['d', 'Average fetch depth (shallow-water forms)'],
+             ['g', 'Gravitational acceleration'],
+             ['H_mo', 'Spectrally based significant wave height'],
+             ['T_p', 'Peak spectral wave period'],
+             ['phi',
+              'Off-wind angle between wind and wave-development direction (restricted '
+              'fetch)']],
+ 'references': ['SPM (1984) Ch. 3',
+                'Resio & Vincent (1977)',
+                'Smith (1991) CERC-91-2',
+                'Hasselmann et al. (1973, 1976)',
+                'Bretschneider & Reid (1954)',
+                'Garratt (1977)',
+                'ACES TR 1-1 (eqs 1-46)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Windspeed adjustment + wave growth for SI inputs. The GUI converts US->SI at
     the edge (wind in m/s, fetch/depth in m, durations in s, deltaT in C)."""

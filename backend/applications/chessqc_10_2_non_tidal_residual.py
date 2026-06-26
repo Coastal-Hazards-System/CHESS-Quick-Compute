@@ -221,6 +221,48 @@ def _decimate(*arrays, nmax=_PLOT_MAX):
 
 
 # --- compute --------------------------------------------------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the non-tidal residual (storm/meteorological surge) by subtracting '
+            'the predicted astronomical tide from the observed water level on a common '
+            'time grid, and reports its mean, RMS, and maximum. The tide is linearly '
+            'interpolated onto the water-level timestamps and water-level gaps are '
+            'preserved.',
+ 'methods': [{'name': 'Non-tidal residual by tide subtraction',
+              'when': None,
+              'tag': 'standard',
+              'note': None,
+              'equations': [{'tex': '\\mathrm{NTR}(t) = \\mathrm{WL}(t) - '
+                                    '\\mathrm{tide}(t)',
+                             'desc': 'Non-tidal residual: observed (detrended) water level '
+                                     'minus the predicted astronomical tide on the same '
+                                     'time grid.'},
+                            {'tex': '\\mathrm{tide}(t_i) = \\mathrm{tide}(t_a) + '
+                                    '\\frac{t_i - t_a}{t_b - t_a}\\,[\\mathrm{tide}(t_b) - '
+                                    '\\mathrm{tide}(t_a)]',
+                             'desc': 'Linear interpolation of the tide onto each '
+                                     'water-level timestamp t_i between bracketing tide '
+                                     'stamps t_a, t_b (a no-op on matched hourly stamps).'},
+                            {'tex': '\\bar{\\eta} = \\frac{1}{N}\\sum_{i=1}^{N} \\eta_i',
+                             'desc': 'Mean NTR over the N overlapping (finite) samples '
+                                     'eta_i = NTR(t_i).'},
+                            {'tex': '\\eta_{\\mathrm{rms}} = '
+                                    '\\sqrt{\\frac{1}{N}\\sum_{i=1}^{N} \\eta_i^{2}}',
+                             'desc': 'Root-mean-square NTR, a measure of typical surge '
+                                     'magnitude.'},
+                            {'tex': '\\eta_{\\max} = \\max_{i} \\, \\eta_i',
+                             'desc': 'Maximum NTR (peak surge) over the overlapping '
+                                     'record.'}]}],
+ 'symbols': [['NTR', 'Non-tidal residual (storm/meteorological surge), in metres'],
+             ['WL(t)', 'Observed, ideally detrended water level at time t'],
+             ['tide(t)', 'Predicted astronomical tide at time t'],
+             ['t_i', 'Water-level timestamp onto which the tide is interpolated'],
+             ['eta_i', 'NTR sample value at timestamp t_i'],
+             ['N', 'Number of overlapping finite (non-gap) samples'],
+             ['eta_rms', 'Root-mean-square NTR'],
+             ['eta_max', 'Maximum (peak) NTR']],
+ 'references': ['NOAA CO-OPS tide/residual practice', 'PyStorm NTR engine']}
+
+
 def compute(inp: dict) -> Result:
     """NTR = water level - tide, with the tide interpolated onto the WL grid."""
     t_wl, v_wl = _parse_csv(str(inp.get("csv_wl", _SAMPLE_WL)), keep_nan=True)

@@ -220,6 +220,61 @@ def _stats_at(H0e, Ks, d, L0, tanb, n_waves):
     return Hmean, Hrms, Hs, H10, H2, Hmax
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Transforms an irregular (spectral) deepwater sea state to a nearshore depth '
+            'over straight, parallel contours, accounting for refraction, shoaling, and '
+            "depth-limited breaking using Goda's method. Returns the transformed "
+            'wave-height statistics (Hs, Hmean, Hrms, H1/10, H2%, Hmax), shoaling and '
+            'effective-refraction coefficients, surf beat, and wave setup.',
+ 'methods': [{'name': 'Goda irregular-wave transformation',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'S(f) = '
+                                    '0.257\\,H_{1/3}^{2}\\,T_{1/3}\\,(T_{1/3}\\,f)^{-5}\\,\\exp(-1.03\\,(T_{1/3}\\,f)^{-4})',
+                             'desc': 'Bretschneider-Mitsuyasu frequency spectrum from the '
+                                     'significant height and period (eq 1).'},
+                            {'tex': '(K_r)_{eff} = \\sqrt{\\frac{\\sum '
+                                    'S(f)\\,K_s^{2}(f)\\,K_r^{2}(f,\\theta)}{\\sum '
+                                    'S(f)\\,K_s^{2}(f)}}',
+                             'desc': 'Effective refraction coefficient: shoaling-weighted '
+                                     'rms of per-component Snell refraction over the '
+                                     'directional spectrum (eqs 5-6).'},
+                            {'tex': 'P_0(x) = '
+                                    '2\\,\\alpha^{2}\\,x\\,\\exp(-\\alpha^{2}\\,x^{2})',
+                             'desc': 'Goda (1975) Rayleigh pdf of normalized height x = '
+                                     "H/H_0', with alpha = 1.416/K_s; clipped between the "
+                                     'breaking-band edges and integrated for the '
+                                     'statistics (eqs 7-10).'},
+                            {'tex': "X_b = 0.17\\,\\frac{L_0}{H_0'}\\,\\left(1 - "
+                                    '\\exp\\left(-1.5\\,\\pi\\,\\frac{d}{L_0}\\,(1 + '
+                                    '15\\,\\tan^{4/3}\\beta)\\right)\\right)',
+                             'desc': 'Incipient depth-limited breaking height; band edges '
+                                     'x_1, x_2 use coefficients A = 0.18 and 0.12 (eq '
+                                     '11).'},
+                            {'tex': '\\xi_{rms} = '
+                                    "\\frac{0.01\\,H_0'}{\\sqrt{(H_0'/L_0)\\,(1 + "
+                                    "h/H_0')}}",
+                             'desc': 'RMS surf beat at the subject depth (eq 12).'}]}],
+ 'symbols': [['S(f)', 'spectral density (m^2 s)'],
+             ['H_{1/3}', 'significant deepwater wave height'],
+             ['T_{1/3}', 'significant wave period'],
+             ['s_max',
+              'directional energy-concentration (spreading) parameter: 10 wind waves, 25 '
+              'steep swell, 75 flat swell'],
+             ['K_s', 'shoaling coefficient'],
+             ['(K_r)_{eff}', 'effective refraction coefficient over the spectrum'],
+             ['x', "normalized wave height H/H_0'"],
+             ['alpha', 'Rayleigh scale parameter, 1.416/K_s'],
+             ["H_0'", 'equivalent (refracted) deepwater significant height'],
+             ['L_0', 'deepwater wavelength; beta = beach slope, h/d = depth']],
+ 'references': ['Goda (1975, 1985)',
+                'Goda (1984)',
+                'Mitsuyasu (1975)',
+                'Shuto (1974)',
+                'ACES TR Ch. 3-2']}
+
+
 def compute(inp: dict, *, g: float = G_SI, n_waves: float = 1000.0) -> Result:
     """Irregular-wave transformation for SI inputs."""
     _validate(inp)

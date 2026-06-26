@@ -276,6 +276,86 @@ def _decimate(*arrays, nmax=_PLOT_MAX):
 
 
 # --- compute --------------------------------------------------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Extracts independent storm peaks from a continuous water-level or '
+            'non-tidal-residual series by raising a percentile threshold until the '
+            'declustered exceedance rate matches a target number of events per year, then '
+            'declustering and rank-trimming to a deterministic peak count for input to the '
+            '10-4 PST.',
+ 'method_key': 'method',
+ 'methods': [{'name': 'Hydrograph declustering',
+              'when': 'hydrograph',
+              'tag': 'preferred',
+              'note': 'Default: groups consecutive exceedances into one storm hydrograph '
+                      "and keeps that group's single maximum.",
+              'equations': [{'tex': 'D_{eff} = \\frac{N}{365.25 \\cdot 24}',
+                             'desc': 'Effective duration in years from the count of '
+                                     'non-NaN samples (gaps do not count toward the '
+                                     'rate).'},
+                            {'tex': 'u = y_{(k)}, \\quad k = \\lfloor (1 - p/100)(N - 1) '
+                                    '\\rfloor',
+                             'desc': 'Threshold u is the value at percentile p of the '
+                                     'series (descending order index k).'},
+                            {'tex': '\\lambda = \\frac{N_p}{D_{eff}}',
+                             'desc': 'Declustered exceedance rate: declustered peak count '
+                                     'over effective duration.'},
+                            {'tex': '\\mu \\leq \\lambda \\leq \\mu + \\epsilon',
+                             'desc': 'Convergence: the highest threshold whose rate is '
+                                     'still at least the target mu, within tolerance '
+                                     'epsilon.'},
+                            {'tex': 't_{i+1} - t_i > \\tau',
+                             'desc': 'A new event starts where consecutive exceedances are '
+                                     'separated by more than the inter-event window tau; '
+                                     'the group maximum is the peak.'},
+                            {'tex': 'N_{keep} = \\mathrm{round}(\\mu \\cdot D_{eff})',
+                             'desc': 'Rank-trim the converged peaks to the largest '
+                                     'round(target x effective-duration) for a '
+                                     'deterministic count.'}]},
+             {'name': 'Peak-gap declustering',
+              'when': 'peak_gap',
+              'tag': '',
+              'note': 'Sequential gap filter: drops a later sample that lies within the '
+                      'window of, and is not larger than, the preceding exceedance.',
+              'equations': [{'tex': 'D_{eff} = \\frac{N}{365.25 \\cdot 24}',
+                             'desc': 'Effective duration in years from the count of '
+                                     'non-NaN samples (gaps do not count toward the '
+                                     'rate).'},
+                            {'tex': 'u = y_{(k)}, \\quad k = \\lfloor (1 - p/100)(N - 1) '
+                                    '\\rfloor',
+                             'desc': 'Threshold u is the value at percentile p of the '
+                                     'series (descending order index k).'},
+                            {'tex': '\\lambda = \\frac{N_p}{D_{eff}}',
+                             'desc': 'Declustered exceedance rate: declustered peak count '
+                                     'over effective duration.'},
+                            {'tex': '\\mu \\leq \\lambda \\leq \\mu + \\epsilon',
+                             'desc': 'Convergence: the highest threshold whose rate is '
+                                     'still at least the target mu, within tolerance '
+                                     'epsilon.'},
+                            {'tex': 't_k - t_{k-1} < \\tau, \\, y_k \\leq y_{k-1}',
+                             'desc': 'Drop exceedance k when it falls within the window '
+                                     'tau of, and is no larger than, the preceding '
+                                     'exceedance.'},
+                            {'tex': 'N_{keep} = \\mathrm{round}(\\mu \\cdot D_{eff})',
+                             'desc': 'Rank-trim the converged peaks to the largest '
+                                     'round(target x effective-duration) for a '
+                                     'deterministic count.'}]}],
+ 'symbols': [['u', 'selected exceedance threshold (m)'],
+             ['p', 'series percentile defining the current threshold (%)'],
+             ['N', 'number of valid (non-NaN) samples in the series'],
+             ['D_{eff}', 'effective record duration in years (count-based)'],
+             ['N_p', 'number of declustered peaks retained'],
+             ['lambda', 'declustered exceedance rate (events per year)'],
+             ['mu', 'target average events per year'],
+             ['epsilon', 'convergence tolerance on the rate (1/yr)'],
+             ['tau', 'inter-event window (years) = inter-event hours / (365.25 x 24)'],
+             ['N_{keep}',
+              'deterministic retained peak count = round(target x effective duration)']],
+ 'references': ['Coles (2001), An Introduction to Statistical Modeling of Extreme Values '
+                '(POT)',
+                'USACE coastal-hazards practice',
+                'PyStorm peaks_over_threshold module']}
+
+
 def compute(inp: dict) -> Result:
     """Extract declustered peaks over an auto-selected threshold (SI inputs)."""
     _validate(inp)

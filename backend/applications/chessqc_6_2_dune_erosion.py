@@ -141,6 +141,57 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Predicts time-dependent storm-driven beach and dune erosion using the '
+            'Kriebel-Dean equilibrium-response model: a storm surge raises the water level '
+            'over a Dean equilibrium profile, and the shoreline recedes exponentially '
+            'toward a new equilibrium. Returns the maximum (equilibrium) recession, the '
+            'response time scale, and the recession and eroded volume realized over the '
+            'storm duration.',
+ 'methods': [{'name': 'Kriebel-Dean equilibrium-response model',
+              'when': None,
+              'tag': '',
+              'note': 'Closed-form analytical limit of Kriebel & Dean (1985); replaces the '
+                      'legacy ACES XSHORE finite-difference scheme and has zero free '
+                      'parameters.',
+              'equations': [{'tex': 'R(t) = R_{\\infty}\\left[1 - \\exp(-t/T_s)\\right]',
+                             'desc': 'Exponential approach of recession (and eroded '
+                                     'volume) toward the new equilibrium after the surge.'},
+                            {'tex': 'R_{\\infty} = \\frac{S\\, W_b}{B + h_b}',
+                             'desc': 'Equilibrium (maximum) recession from a Bruun-type '
+                                     'sand balance; S = surge, B = berm height, h_b = '
+                                     'breaking depth, W_b = surf-zone width.'},
+                            {'tex': 'h_b = \\frac{H_b}{\\kappa}, \\, W_b = '
+                                    '\\left(\\frac{h_b}{A}\\right)^{3/2}',
+                             'desc': 'Breaking depth from the spilling-breaker index and '
+                                     'surf-zone width from the Dean equilibrium profile h '
+                                     '= A x^{2/3}.'},
+                            {'tex': 'T_s = \\frac{C_1\\, H_b^{3/2}}{g^{1/2} A^3 \\left(1 + '
+                                    'h_b/B + m_1 W_b/h_b\\right)}',
+                             'desc': 'Erosion response time scale (Kriebel & Dean 1993), '
+                                     'with C_1 = 320, A the profile shape factor, m_1 the '
+                                     'beach-face slope.'},
+                            {'tex': 'V_{\\infty} = R_{\\infty}\\left(B + '
+                                    '\\frac{1}{2}S\\right)',
+                             'desc': 'Equilibrium eroded volume per unit beach length '
+                                     'above the surge level.'}]}],
+ 'symbols': [['R_inf', 'Equilibrium (maximum) shoreline recession'],
+             ['R(t)', 'Recession realized after surge duration t'],
+             ['T_s', 'Erosion response time scale'],
+             ['S', 'Peak storm surge above berm datum'],
+             ['H_b', 'Breaking wave height'],
+             ['h_b', 'Breaking depth, H_b/kappa'],
+             ['W_b', 'Surf-zone (active profile) width'],
+             ['A', 'Dean equilibrium-profile shape factor from D50 (Moore 1982)'],
+             ['B', 'Berm/dune height above surge level'],
+             ['kappa', 'Spilling-breaker index, 0.78']],
+ 'references': ['Kriebel & Dean (1985), Coastal Engineering 9:221-245, eqs 16-17',
+                'Kriebel & Dean (1993) erosion time scale',
+                'Dean (1977) equilibrium profile',
+                'Bruun (1954) sand balance',
+                'Moore (1982) A(D50) profile shape factor']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Storm-driven dune/beach erosion (Kriebel-Dean equilibrium-response), SI inputs."""
     _validate(inp)

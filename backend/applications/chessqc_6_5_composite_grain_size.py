@@ -125,6 +125,64 @@ class Result:
     notes: str = ""
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes grain-size statistics for a sediment sample (or composite) from '
+            'sieve data, reporting both Folk graphic measures and method-of-moments '
+            'measures (mean, sorting, skewness, kurtosis) on the phi scale, plus the '
+            'median diameter in mm.',
+ 'methods': [{'name': 'Folk graphic statistics and method of moments',
+              'when': None,
+              'tag': '',
+              'note': 'Both descriptive systems are computed from the same '
+                      'cumulative-weight curve: Folk graphic measures use selected '
+                      'percentiles, while the method of moments weights every sieve class.',
+              'equations': [{'tex': '\\phi = -\\log_{2} d',
+                             'desc': 'Phi transformation of grain diameter d (mm); '
+                                     'inversely, d = 2^{-\\phi}.'},
+                            {'tex': '\\mu = \\frac{\\phi_{16} + \\phi_{50} + '
+                                    '\\phi_{84}}{3}',
+                             'desc': 'Folk inclusive graphic mean grain size (phi).'},
+                            {'tex': '\\sigma = \\frac{\\phi_{84} - \\phi_{16}}{4} + '
+                                    '\\frac{\\phi_{95} - \\phi_{5}}{6.6}',
+                             'desc': 'Folk inclusive graphic standard deviation (sorting); '
+                                     'most beach sands 0.5-2.0.'},
+                            {'tex': 'S_{k} = \\frac{\\phi_{16} + \\phi_{84} - '
+                                    '2\\,\\phi_{50}}{2\\,(\\phi_{84} - \\phi_{16})} + '
+                                    '\\frac{\\phi_{5} + \\phi_{95} - '
+                                    '2\\,\\phi_{50}}{2\\,(\\phi_{95} - \\phi_{5})}',
+                             'desc': 'Folk inclusive graphic skewness (limits -1 to +1; + '
+                                     '= excess fines).'},
+                            {'tex': '\\bar{X} = \\frac{\\sum f\\,m_{\\phi}}{\\sum f}, '
+                                    '\\quad \\sigma = \\sqrt{\\frac{\\sum f\\,(m_{\\phi} - '
+                                    '\\bar{X})^{2}}{\\sum f}}',
+                             'desc': 'Method of moments mean and standard deviation, with '
+                                     'sieve weight f used as frequency and m_\\phi the '
+                                     'class phi value.'},
+                            {'tex': 'S_{k} = \\frac{\\sum f\\,(m_{\\phi} - '
+                                    '\\bar{X})^{3}}{\\sum f\\,\\sigma^{3}}, \\quad K = '
+                                    '\\frac{\\sum f\\,(m_{\\phi} - \\bar{X})^{4}}{\\sum '
+                                    'f\\,\\sigma^{4}}',
+                             'desc': 'Method of moments skewness (3rd) and kurtosis (4th '
+                                     'moment).'}]}],
+ 'symbols': [['phi', 'Phi grain size, phi = -log2(d) with d in mm'],
+             ['d', 'Grain diameter in millimetres'],
+             ['phi_p',
+              'Phi size at the p-th cumulative-weight percentile (e.g. phi_16, phi_50, '
+              'phi_84)'],
+             ['mu', 'Folk graphic mean grain size (phi)'],
+             ['sigma', 'Standard deviation / sorting (phi)'],
+             ['S_k', 'Skewness (dimensionless)'],
+             ['K', 'Kurtosis (dimensionless)'],
+             ['X_bar', 'Method-of-moments mean grain size (phi)'],
+             ['f', 'Weight (percent frequency) retained on each sieve class'],
+             ['m_phi', 'Phi midpoint of a sieve size class']],
+ 'references': ['Folk (1974)',
+                'Krumbein (1934, 1938)',
+                'SPM (1984) Ch. 5',
+                'Friedman & Sanders (1978)',
+                'ACES TR 6-3']}
+
+
 def compute(inp: dict) -> Result:
     """Grain-size statistics (Folk graphic + method of moments) from sieve data."""
     rows = [r for r in inp["sieve"] if r and r[0] not in (None, "")]

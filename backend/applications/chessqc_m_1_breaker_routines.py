@@ -152,6 +152,55 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes a set of limiting-wave utility relations for a quick check: the '
+            'Miche maximum wave steepness, the McCowan flat-slope and Singamsetti and Wind '
+            'finite-slope breaking heights, and the Weggel (1972) breaker-index '
+            'coefficients with the corresponding breaker depth and the breaker height at a '
+            'structure.',
+ 'methods': [{'name': 'Breaker and steepness utility relations',
+              'when': None,
+              'tag': 'standard',
+              'note': 'Structure breaker uses the depth-consistent inversion of the Weggel '
+                      "breaker-depth relation; the TR's closed-form eq 5 returns "
+                      'non-physical values and is not used.',
+              'equations': [{'tex': '\\frac{H}{L} = 0.142\\,\\tanh(k d)',
+                             'desc': 'Maximum wave steepness (Miche 1944), with k = '
+                                     '2\\pi/L.'},
+                            {'tex': 'H_{b} = 0.78\\,d',
+                             'desc': 'Breaking height on a flat or unknown slope (McCowan '
+                                     '1894).'},
+                            {'tex': "H_{b} = H_{0}' \\left[ 0.575\\, m^{0.031} "
+                                    "\\left(\\frac{H_{0}'}{L_{0}}\\right)^{-0.254} "
+                                    '\\right]',
+                             'desc': 'Breaking height on a finite nearshore slope m = '
+                                     'tan(theta) (Singamsetti & Wind 1980).'},
+                            {'tex': 'd_{b} = \\frac{H_{b}}{b - a\\,H_{b}/(g T^{2})}, '
+                                    '\\quad a = 43.8(1 - e^{-19.5 m}), \\quad b = '
+                                    '\\frac{1.56}{1 + e^{-19.5 m}}',
+                             'desc': 'Breaker depth and breaker-index coefficients a(m), '
+                                     'b(m) (Weggel 1972), gravity-explicit form.'},
+                            {'tex': 'H_{b} = \\frac{b\\,d_{s}}{1 + a\\,d_{s}/(g T^{2})}',
+                             'desc': 'Breaker height at a structure of depth d_s, the '
+                                     'depth-consistent inversion of the Weggel '
+                                     'breaker-depth relation.'}]}],
+ 'symbols': [['H/L', 'wave steepness (height over wavelength)'],
+             ['k', 'wave number, 2 pi / L'],
+             ['d', 'local water depth (steepness / flat breaking)'],
+             ['H_b', 'breaking wave height'],
+             ["H_0'", 'unrefracted deepwater wave height'],
+             ['L_0', 'deepwater wavelength, g T^2 / (2 pi)'],
+             ['m', 'nearshore slope, tan(theta)'],
+             ['d_b', 'water depth at breaking (Weggel)'],
+             ['d_s', 'water depth at the structure'],
+             ['a, b', 'Weggel (1972) breaker-index coefficients, functions of slope m']],
+ 'references': ['Weggel (1972)',
+                'Miche (1944)',
+                'McCowan (1894)',
+                'Singamsetti & Wind (1980)',
+                'ACES Technical Reference ch. 8-1 (Miscellaneous Routines)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Breaker and steepness utility relations for SI inputs."""
     _validate(inp)

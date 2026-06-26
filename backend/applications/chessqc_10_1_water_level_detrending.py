@@ -275,6 +275,68 @@ def _decimate(*arrays: np.ndarray, nmax: int = _PLOT_MAX) -> tuple:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Removes the long-term linear sea-level trend from a water-level record by '
+            'ordinary least-squares regression of level on time, returning the fitted '
+            'slope (rate), the detrended residual series, and the RMS residual about the '
+            'trend. The slope can be fitted from the record or supplied directly, and the '
+            'trend is referenced either to the National Tidal Datum Epoch (NTDE) midpoint '
+            'or to the record mean.',
+ 'method_key': 'method',
+ 'methods': [{'name': 'NTDE midpoint pivot (NOAA datum convention)',
+              'when': 'NTDE midpoint (pivot)',
+              'tag': 'preferred',
+              'note': 'Trend zeroed at the NTDE midpoint so the detrended level matches '
+                      'the observed level at that epoch, matching NOAA tidal-datum '
+                      'conventions.',
+              'equations': [{'tex': 'm = \\frac{\\sum (t_i - \\bar{t})\\,(y_i - '
+                                    '\\bar{y})}{\\sum (t_i - \\bar{t})^2}',
+                             'desc': 'Ordinary least-squares slope (rate) about the data '
+                                     'centroid; reference-independent, computed on finite '
+                                     'samples only'},
+                            {'tex': 't_p = \\frac{y_s + y_e + 1}{2}',
+                             'desc': 'Pivot (reference) year: midpoint of the NTDE '
+                                     'spanning year y_s to y_e + 1'},
+                            {'tex': 'y_{d,i} = y_i - m\\,(t_i - t_p)',
+                             'desc': 'Detrended level: observed level minus the linear '
+                                     'component, which is zero at the pivot'},
+                            {'tex': 'R = \\sqrt{\\frac{1}{n}\\sum \\left[(y_i - m(t_i - '
+                                    't_p)) - d\\right]^2}',
+                             'desc': 'RMS residual about the trend, with d the mean of the '
+                                     'detrended series'}]},
+             {'name': 'Record-mean centering',
+              'when': 'Record mean (no pivot)',
+              'tag': 'standard',
+              'note': 'Detrended series referenced to the record-average level; same '
+                      'slope, different constant offset.',
+              'equations': [{'tex': 'm = \\frac{\\sum (t_i - \\bar{t})\\,(y_i - '
+                                    '\\bar{y})}{\\sum (t_i - \\bar{t})^2}',
+                             'desc': 'Ordinary least-squares slope (rate) about the data '
+                                     'centroid; identical to the pivoted fit'},
+                            {'tex': 't_p = \\bar{t} = \\frac{1}{n}\\sum t_i',
+                             'desc': 'Pivot (reference) year set to the mean time of the '
+                                     'finite record'},
+                            {'tex': 'y_{d,i} = y_i - m\\,(t_i - t_p)',
+                             'desc': 'Detrended level referenced to the record-average '
+                                     'level'},
+                            {'tex': '\\Delta = m\\,(t_f - t_0)',
+                             'desc': 'Total trend over the record length, slope times '
+                                     'record span'}]}],
+ 'symbols': [['m', 'Linear trend (slope / sea-level rate), m/yr'],
+             ['t_i', 'Decimal calendar year of sample i'],
+             ['y_i', 'Observed water level of sample i, m'],
+             ['bar t', 'Mean time (centroid) of the finite samples'],
+             ['bar y', 'Mean water level of the finite samples'],
+             ['t_p', 'Pivot (reference) year where the trend is zero'],
+             ['y_s, y_e', 'NTDE start and end years (inclusive)'],
+             ['y_d', 'Detrended water level, m'],
+             ['d', 'Mean of the finite detrended series (datum level)'],
+             ['R', 'RMS residual about the fitted trend, m']],
+ 'references': ['Zervas, C. (2009), Sea Level Variations of the United States 1854-2006, '
+                'NOAA Technical Report NOS CO-OPS 053',
+                'NOAA CO-OPS tidal datum (NTDE) conventions']}
+
+
 def compute(inp: dict) -> Result:
     """Detrend a water-level record (SI inputs). Returns slope and the original,
     trend, and detrended series for plotting."""

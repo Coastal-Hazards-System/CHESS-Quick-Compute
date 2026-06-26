@@ -234,6 +234,54 @@ def _validate(inp):
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Time-marches a spatially-integrated 1-D continuity-plus-momentum model of a '
+            'tidal inlet, solving the coupled inlet discharge Q(t) and bay water level '
+            'h_b(t) under a harmonic sea tide by 4th-order Runge-Kutta. Reports peak '
+            'ebb/flood discharge, controlling-section velocity, and bay tidal range.',
+ 'methods': [{'name': 'Spatially-integrated 1-D inlet hydraulics (RK4)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\frac{dQ}{dt} = '
+                                    '-\\frac{I_g}{2}\\,\\frac{Q\\,|Q|}{A_{min}^{2}} - '
+                                    'g\\,I_g\\,(h_b - h_s) - I_g\\,F',
+                             'desc': 'Throat-controlled spatially-integrated momentum ODE '
+                                     '(eq 15): inertia balanced by throat entrance/exit '
+                                     'loss, surface-slope pressure, and bottom friction.'},
+                            {'tex': '\\frac{dh_b}{dt} = \\frac{Q + Q_{river}}{A_{bay}}, '
+                                    '\\quad A_{bay} = A_b\\,(1 + \\beta\\,h_b)',
+                             'desc': 'Bay continuity (eq 16): bay level rises with net '
+                                     'inflow over the (level-dependent) bay surface area.'},
+                            {'tex': 'I_g = \\frac{1}{\\sum_i \\frac{L_i}{A_i}}',
+                             'desc': 'Geometry integral (eq 13): inverse of the '
+                                     'along-inlet sum of length over cross-section area.'},
+                            {'tex': 'F = \\sum_i '
+                                    '\\frac{g\\,n_i^{2}\\,Q\\,|Q|\\,L_i}{k\\,d_i^{4/3}\\,A_i^{2}}',
+                             'desc': 'Total Manning bottom-friction term (eq 12) summed '
+                                     'over cross-sections; k = 1.486^2 US unit factor, d_i '
+                                     '= A_i / W_i.'},
+                            {'tex': 'n_i = C_1 - C_2\\,d_i',
+                             'desc': 'Depth-dependent Manning roughness (eq 7) for each '
+                                     'cross-section of mean depth d_i.'}]}],
+ 'symbols': [['Q', 'Inlet discharge, positive on flood, negative on ebb (ft^3/s)'],
+             ['h_b', 'Bay water level above datum (ft)'],
+             ['h_s', 'Sea (boundary) water level from the M2 tidal synthesis (ft)'],
+             ['I_g', 'Geometry integral, inverse of sum of L_i/A_i (ft)'],
+             ['A_{min}', 'Throat (minimum) inlet cross-section flow area (ft^2)'],
+             ['F', 'Spatially-summed Manning bottom-friction term'],
+             ['n_i', 'Manning roughness of cross-section i, n_i = C_1 - C_2 d_i'],
+             ['d_i', 'Mean water depth of cross-section i, A_i / W_i (ft)'],
+             ['A_{bay}', 'Bay surface area, A_b(1 + beta h_b) (ft^2)'],
+             ['k', 'US Manning unit-conversion factor, 1.486^2']],
+ 'references': ['Seelig (1977)',
+                'Seelig, Harris & Herchenroder (1977)',
+                'Harris & Bodine (1977)',
+                'Keulegan (1967)',
+                'Schureman (1971)',
+                'ACES Technical Reference Ch. 7-1, eqs (1)-(16)']}
+
+
 def compute(inp: dict, *, g: float = G_US) -> Result:
     """Time-march the coupled inlet discharge / bay-level ODEs (US units)."""
     _validate(inp)

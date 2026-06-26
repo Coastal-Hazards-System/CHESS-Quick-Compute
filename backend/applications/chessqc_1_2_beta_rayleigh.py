@@ -166,6 +166,67 @@ def _beta_rayleigh_pdf(H: np.ndarray, Hb: float, alpha: float, beta: float) -> n
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the depth-limited Beta-Rayleigh distribution of individual wave '
+            'heights for a sea state given the energy-based significant height, peak '
+            'period, and depth, returning the characteristic heights (H_rms, median, mean '
+            'of highest 1/3, 1/10, 1/100) plus the probability-density curve. In deep '
+            'water (d/(g T_p^2) >= 0.01) it reverts to the classic Rayleigh distribution.',
+ 'methods': [{'name': 'Beta-Rayleigh depth-limited distribution',
+              'when': None,
+              'tag': 'standard',
+              'note': None,
+              'equations': [{'tex': 'p_{BR}(H) = '
+                                    '\\frac{2\\,\\Gamma(\\alpha+\\beta)}{\\Gamma(\\alpha)\\,\\Gamma(\\beta)} '
+                                    '\\frac{H^{2\\alpha-1}}{H_b^{2\\alpha}} \\left(1 - '
+                                    '\\frac{H^2}{H_b^2}\\right)^{\\beta-1}',
+                             'desc': 'Beta-Rayleigh probability density of individual wave '
+                                     'height, valid 0 < H < H_b (eq 5).'},
+                            {'tex': 'H_{rms} = \\frac{H_{mo}}{\\sqrt{2}} '
+                                    '\\exp\\left(0.00089 '
+                                    '\\left(\\frac{g\\,T_p^2}{d}\\right)^{0.834}\\right)',
+                             'desc': 'Depth-dependent best-fit for root-mean-square height '
+                                     '(Thompson & Vincent 1985; corrected relative-depth '
+                                     'argument g T_p^2 / d) (eq 16).'},
+                            {'tex': 'H_{rmq} = \\frac{H_{mo}^2}{\\sqrt{2}} '
+                                    '\\exp\\left(0.000098 '
+                                    '\\left(\\frac{g\\,T_p^2}{d}\\right)^{1.208}\\right)',
+                             'desc': 'Depth-dependent best-fit for root-mean-quad '
+                                     '(4th-moment) height; carries units of length squared '
+                                     '(eq 19).'},
+                            {'tex': '\\alpha = \\frac{K_1\\,(K_2 - K_1)}{K_1^2 - K_2}',
+                             'desc': 'Beta-Rayleigh shape parameter alpha from the 2nd/4th '
+                                     'moment ratios K_1 = H_rms^2/H_b^2, K_2 = '
+                                     'H_rmq^2/H_b^4 (eq 10).'},
+                            {'tex': '\\beta = \\frac{(1 - K_1)\\,(K_2 - K_1)}{K_1^2 - K_2}',
+                             'desc': 'Beta-Rayleigh shape parameter beta from the same '
+                                     'moment ratios (eq 11).'},
+                            {'tex': 'p(H) = \\frac{2H}{H_{rms}^2} '
+                                    '\\exp\\left(-\\left(\\frac{H}{H_{rms}}\\right)^2\\right)',
+                             'desc': 'Deepwater Rayleigh limit (narrow-band Gaussian sea) '
+                                     'used when d/(g T_p^2) >= 0.01 (eq 1).'}]}],
+ 'symbols': [['H', 'Individual wave height (random variable)'],
+             ['H_{mo}',
+              'Energy-based (zero-moment) significant wave height of the sea state'],
+             ['H_{rms}', 'Root-mean-square wave height'],
+             ['H_{rmq}',
+              'Root-mean-quad (4th-moment) wave height; units of length squared'],
+             ['H_b',
+              'Maximum (breaking) wave height, taken as 0.9 d (ACES) or 0.78 d (SPM)'],
+             ['T_p', 'Peak spectral wave period'],
+             ['d', 'Water depth'],
+             ['alpha, beta', 'Beta-Rayleigh shape parameters from the 2nd and 4th moments'],
+             ['K_1, K_2', 'Moment ratios H_rms^2/H_b^2 and H_rmq^2/H_b^4'],
+             ['g', 'Gravitational acceleration']],
+ 'references': ['Hughes & Borgman (1987)',
+                'Thompson & Vincent (1985)',
+                'Hughes & Ebersole (1987)',
+                'Longuet-Higgins (1952)',
+                'Ebersole & Hughes (1987)',
+                'SPM (1984)',
+                'ACES Technical Reference, Chapter 1-2']}
+
+
 def compute(inp: dict, *, g: float = G_SI, n_grid: int = 4001) -> Result:
     """Beta-Rayleigh characteristic heights for SI inputs {Hmo, Tp, d, Hb_coef}."""
     _validate(inp)

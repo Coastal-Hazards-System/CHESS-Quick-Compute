@@ -274,6 +274,92 @@ def _solve_modulus(H: float, T: float, d: float, order: int, g: float) -> float:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes finite-amplitude cnoidal (periodic long-wave) properties from wave '
+            'height, period, and depth: wavelength, celerity, surface elevation, '
+            'water-particle velocities and accelerations, pressure, energy density and '
+            'flux, the Ursell number, and the elliptic modulus. The solution is expressed '
+            'with Jacobian elliptic functions, using either first-order (Isobe 1985) or '
+            'second-order (Hardy & Kraus 1987) cnoidal theory.',
+ 'method_key': 'order',
+ 'methods': [{'name': 'First-order cnoidal (Isobe 1985)',
+              'when': '1',
+              'tag': 'standard',
+              'note': "Default; reproduces ACES User's Guide Example 2-2 and is adequate "
+                      'for typical shallow-water design.',
+              'equations': [{'tex': '\\frac{16\\,\\kappa^2 K^2}{3} = \\frac{g H T^2}{d^2}',
+                             'desc': 'First-order dispersion relation; solved for the '
+                                     'squared elliptic modulus m = kappa^2 (m K^2 is '
+                                     'monotone increasing, so the root is unique).'},
+                            {'tex': 'c = \\sqrt{g d}\\,\\left(1 + \\epsilon\\,\\frac{1 + '
+                                    '2\\lambda - 3\\mu}{2}\\right)',
+                             'desc': 'Celerity; wavelength follows from L = c T. Here '
+                                     'epsilon = H/d.'},
+                            {'tex': '\\eta = d\\,\\left(A_0 + '
+                                    'A_1\\,\\mathrm{cn}^{2}\\theta\\right)',
+                             'desc': 'Surface elevation, with A_0 = epsilon(lambda - mu) '
+                                     'and A_1 = epsilon.'},
+                            {'tex': '\\theta = 2K\\left(\\frac{x}{L} - '
+                                    '\\frac{t}{T}\\right)',
+                             'desc': 'Phase argument of the Jacobian elliptic functions '
+                                     '(crest at theta = 0).'},
+                            {'tex': 'E = \\rho g H^2 \\,\\frac{-\\lambda + 2\\mu + '
+                                    '4\\lambda\\mu - \\lambda^2 - 3\\mu^2}{3}',
+                             'desc': 'Mean energy density per unit surface area; the '
+                                     'energy flux uses the same factor times sqrt(g d).'}]},
+             {'name': 'Second-order cnoidal (Hardy & Kraus 1987)',
+              'when': '2',
+              'tag': 'preferred',
+              'note': 'Higher-order truncation; adds the cn^4 surface term and '
+                      'depth-dependent velocity corrections for steeper or more strongly '
+                      'nonlinear waves.',
+              'equations': [{'tex': '\\frac{16\\,\\kappa^2 K^2}{3} = \\frac{g H '
+                                    'T^2}{d^2}\\left(1 - \\epsilon\\,\\frac{1 + '
+                                    '2\\lambda}{4}\\right)',
+                             'desc': 'Second-order dispersion relation; the modulus is '
+                                     'found by fixed-point iteration seeded with the '
+                                     'first-order root.'},
+                            {'tex': 'c = \\sqrt{g d}\\,\\left(1 + \\epsilon C_1 + '
+                                    '\\epsilon^2 C_2\\right)',
+                             'desc': 'Celerity with C_1 = (1 + 2lambda - 3mu)/2 and the '
+                                     'second-order coefficient C_2.'},
+                            {'tex': '\\eta = d\\,\\left(A_0 + '
+                                    'A_1\\,\\mathrm{cn}^{2}\\theta + '
+                                    'A_2\\,\\mathrm{cn}^{4}\\theta\\right)',
+                             'desc': 'Surface elevation, now including the second-order '
+                                     'cn^4 term (A_2 = (3/4) epsilon^2).'},
+                            {'tex': 'u = \\sqrt{g d}\\,\\left[\\left(B_{00} + '
+                                    'B_{10}\\,\\mathrm{cn}^{2}\\theta + '
+                                    'B_{20}\\,\\mathrm{cn}^{4}\\theta\\right) - '
+                                    '\\frac{1}{2}\\left(\\frac{z+d}{d}\\right)^{2}\\left(B_{01} '
+                                    '+ B_{11}\\,\\mathrm{cn}^{2}\\theta + '
+                                    'B_{21}\\,\\mathrm{cn}^{4}\\theta\\right)\\right]',
+                             'desc': 'Horizontal velocity with elevation-dependent (z+d)/d '
+                                     'correction terms.'},
+                            {'tex': 'L = c T',
+                             'desc': 'Wavelength from celerity and period; the Ursell '
+                                     'number U_r = H L^2 / d^3 gauges cnoidal validity '
+                                     '(questionable below ~26).'}]}],
+ 'symbols': [['H', 'Wave height'],
+             ['T', 'Wave period'],
+             ['d', 'Still-water depth'],
+             ['eta', 'Surface elevation above SWL (z = 0)'],
+             ['epsilon', 'Perturbation parameter, epsilon = H/d'],
+             ['kappa',
+              'Elliptic modulus (auxiliary parameter; kappa -> 1 is the solitary limit)'],
+             ['K', 'Complete elliptic integral of the first kind, K(kappa)'],
+             ['lambda', "lambda = kappa'^2 / kappa^2 = (1 - kappa^2)/kappa^2"],
+             ['mu',
+              'mu = E(kappa) / (kappa^2 K), where E is the complete elliptic integral of '
+              'the second kind'],
+             ['theta', 'Phase argument of cn, sn, dn: theta = 2K(x/L - t/T)']],
+ 'references': ['Isobe (1985)',
+                'Hardy & Kraus (1987)',
+                'Korteweg & de Vries (1895)',
+                'Abramowitz & Stegun (1972)',
+                'ACES TR 2-2 (eqs 1-61)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho: float | None = None,
             n_profile: int = 201) -> Result:
     """Cnoidal-wave-theory results for SI inputs {H, T, d, z, xL, order, water}.

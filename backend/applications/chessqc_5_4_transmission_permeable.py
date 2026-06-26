@@ -276,6 +276,89 @@ class Result:
     notes: str = ""
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates the wave height transmitted past a permeable, multilayer '
+            'trapezoidal rubble-mound breakwater by combining transmission through the '
+            'porous structure with transmission by overtopping. Returns the through, '
+            'overtopping, total, and reflection coefficients and the transmitted wave '
+            'height.',
+ 'method_key': 'method',
+ 'methods': [{'name': 'Madsen & White layered hydraulic model',
+              'when': 'Madsen-White',
+              'tag': 'preferred',
+              'note': 'ACES default. Full layered Madsen & White (1976) model: reduces the '
+                      'trapezoidal multilayer section to a hydraulically equivalent '
+                      'homogeneous rectangle, then iterates internal and seaward-slope '
+                      'dissipation. Reproduces ACES Example 1.',
+              'equations': [{'tex': 'K_T = \\sqrt{K_{To}^2 + K_{Tt}^2}',
+                             'desc': 'Total transmission coefficient combining overtopping '
+                                     'and through-transmission; H_T = K_T H_i (eqs 1-2).'},
+                            {'tex': 'K_{Tt} = T_{si}\\,T_{ti}',
+                             'desc': 'Through-transmission synthesized from the '
+                                     'seaward-slope (external) and internal transmission '
+                                     'coefficients (eq 55).'},
+                            {'tex': '\\frac{a_t}{a_1} = '
+                                    '\\frac{4\\,\\epsilon}{(1+\\epsilon)^2\\,e^{\\,i\\,k\\,l_e} '
+                                    '- (1-\\epsilon)^2\\,e^{-i\\,k\\,l_e}}',
+                             'desc': 'Internal transmission amplitude ratio; T_ti is its '
+                                     'magnitude, with complex wavenumber k = k_x sqrt(1 - '
+                                     'i f) (eqs 17-20).'},
+                            {'tex': 'f = \\frac{n_r}{k_x\\,l_e}\\left(\\sqrt{1 + \\left(1 '
+                                    '+ '
+                                    '\\frac{170}{R_d}\\right)\\frac{16\\,\\beta_r}{3\\,\\pi}\\,a_1\\,\\frac{l_e}{d_s}} '
+                                    '- 1\\right)',
+                             'desc': 'Madsen-White nondimensional friction factor, solved '
+                                     'by iterating the linearization parameter lambda (eqs '
+                                     '21-24).'},
+                            {'tex': 'K_{To} = \\left(0.51 - '
+                                    '0.11\\,\\frac{B}{h_s}\\right)\\left(1 - '
+                                    '\\frac{F}{R_{up}}\\right)',
+                             'desc': 'Overtopping transmission (Seelig 1980); freeboard F '
+                                     '= h_s - d_s, runup R_up from Ahrens & McCartney (eqs '
+                                     '3-5).'},
+                            {'tex': 'l_e = \\left[\\sum_{j} \\frac{1}{\\sqrt{\\sum_{n} '
+                                    '(\\beta_n/\\beta_r)\\,l_n}}\\,\\frac{\\Delta '
+                                    'h_j}{d_s}\\right]^{-2}',
+                             'desc': 'Width of the hydraulically equivalent rectangle from '
+                                     'equating Darcy-Forchheimer discharge over layers j '
+                                     'and materials n (eqs 56-61).'}]},
+             {'name': "d'Angremond + Zanuttigh empirical",
+              'when': "d'Angremond + Zanuttigh",
+              'tag': 'standard',
+              'note': "Modern empirical alternative needing no layer geometry; d'Angremond "
+                      'et al. (1996) transmission with Zanuttigh & van der Meer (2008) '
+                      'rock reflection. Gives a reflection coefficient closer to the '
+                      'published value than the over-predicted Madsen-White K_R.',
+              'equations': [{'tex': 'K_T = -0.4\\,\\frac{F}{H_i} + '
+                                    '0.64\\left(\\frac{B}{H_i}\\right)^{-0.31}\\left(1 - '
+                                    'e^{-0.5\\,\\xi}\\right)',
+                             'desc': "d'Angremond et al. (1996) transmission, clipped to "
+                                     '0.075 <= K_T <= 0.8.'},
+                            {'tex': 'K_R = \\tanh\\left(0.12\\,\\xi^{0.87}\\right)',
+                             'desc': 'Zanuttigh & van der Meer (2008) reflection '
+                                     'coefficient for rock structures.'},
+                            {'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{H_i/L_0}}',
+                             'desc': 'Surf-similarity (Iribarren) parameter; L_0 = g T^2 / '
+                                     '(2 pi) is the deepwater wavelength.'}]}],
+ 'symbols': [['K_T', 'Total transmission coefficient (transmitted/incident height)'],
+             ['K_{Tt}', 'Through-transmission coefficient (porous medium)'],
+             ['K_{To}', 'Overtopping transmission coefficient'],
+             ['K_R', 'Reflection coefficient'],
+             ['H_i', 'Incident wave height; H_T transmitted height = K_T H_i'],
+             ['l_e', 'Width of the hydraulically equivalent rectangular breakwater'],
+             ['epsilon', 'Complex impedance ratio, (n/sqrt(S)) / sqrt(1 - i f)'],
+             ['f', 'Nondimensional internal friction factor (iterated)'],
+             ['R_up', 'Wave runup on the seaward face (Ahrens & McCartney 1975)'],
+             ['xi', 'Surf-similarity parameter; F = h_s - d_s is the crest freeboard']],
+ 'references': ['Madsen & White (1976)',
+                'Seelig (1979)',
+                'Seelig (1980)',
+                'Ahrens & McCartney (1975)',
+                "d'Angremond, van der Meer & de Jong (1996)",
+                'Zanuttigh & van der Meer (2008)',
+                'ACES Technical Reference Ch. 5-4, eqs (1)-(64)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Wave transmission through a permeable breakwater (SI inputs; lists may be SI or,
     when omitted, the Example-1 geometry in feet is used and computed in feet)."""

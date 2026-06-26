@@ -267,6 +267,64 @@ def _solve_fenton(Htil: float, tau: float, U1: float, U2: float,
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes a steady progressive wave of permanent form by Newton-solving an '
+            "N-term stream-function Fourier series (Fenton's exact nonlinear theory), "
+            'returning celerity, wavelength, the full velocity/acceleration/pressure field '
+            'at a point and along the profile, plus integral properties (energies, '
+            'impulse, radiation stress, energy flux).',
+ 'methods': [{'name': 'Fenton stream-function Fourier series',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\psi(x,z) = -\\bar{u}\\,(d+z) + '
+                                    '\\sqrt{\\frac{g}{k^3}}\\,\\sum_{j=1}^{N} '
+                                    'B_{j}\\,\\frac{\\sinh[\\,j k (d+z)\\,]}{\\cosh(j k '
+                                    'd)}\\,\\cos(j k x)',
+                             'desc': 'N-term Fourier cosine series for the steady-frame '
+                                     'stream function (eq 10); the B_j coefficients are '
+                                     'the primary unknowns.'},
+                            {'tex': '\\psi(x,\\eta) = -Q',
+                             'desc': 'Kinematic free-surface boundary condition (KFSBC, eq '
+                                     '4): the surface is a streamline carrying constant '
+                                     'volume flux Q.'},
+                            {'tex': '\\frac{1}{2}\\left[\\left(\\frac{\\partial '
+                                    '\\psi}{\\partial x}\\right)^2 + '
+                                    '\\left(\\frac{\\partial \\psi}{\\partial '
+                                    'z}\\right)^2\\right] + g\\,\\eta(x) = R',
+                             'desc': 'Dynamic free-surface boundary condition (DFSBC, eq '
+                                     '5): Bernoulli at the surface, collocated at N+1 '
+                                     'points to close the system.'},
+                            {'tex': 'c = \\frac{L}{T} = \\frac{2\\pi}{k T} = \\bar{u} + '
+                                    '\\bar{u}_{1}',
+                             'desc': 'Celerity / dispersion closure (eq 9); Euler form '
+                                     'uses mean current u_1 (shown), Stokes form replaces '
+                                     'it with c = Q/d + u_2.'},
+                            {'tex': 'u(x,z) = -\\bar{u} + '
+                                    '\\sqrt{\\frac{g}{k}}\\,\\sum_{j=1}^{N} '
+                                    'j\\,B_{j}\\,\\frac{\\cosh[\\,j k (d+z)\\,]}{\\cosh(j '
+                                    'k d)}\\,\\cos(j k x)',
+                             'desc': 'Horizontal velocity field from the converged '
+                                     'coefficients (eq 16); w, accelerations and pressure '
+                                     'follow by differentiation.'}]}],
+ 'symbols': [['psi', 'Stream function in the steady (wave-following) frame'],
+             ['B_j', 'Dimensionless Fourier coefficients (the Newton unknowns), j = 1..N'],
+             ['k', 'Wave number, k = 2*pi/L'],
+             ['c', 'Wave celerity, c = L/T'],
+             ['Q', 'Constant volume flow rate per unit width in the steady frame'],
+             ['R', 'Bernoulli constant (bed datum); r = R - g*d is the SWL-datum form'],
+             ['u_bar',
+              'Mean fluid velocity; u_1 mean Eulerian current, u_2 depth-averaged '
+              'mass-transport velocity'],
+             ['eta', 'Free-surface elevation above SWL'],
+             ['d', 'Still-water depth'],
+             ['N', 'Number of Fourier terms (1 to 25)']],
+ 'references': ['Rienecker & Fenton (1981)',
+                'Fenton (1988a, 1988b)',
+                'Fenton (1990)',
+                'ACES Technical Reference, Chapter 2-3 (Fourier Series Wave Theory)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho: float | None = None,
             n_profile: int = 201) -> Result:
     """Fenton Fourier-series results for SI inputs.

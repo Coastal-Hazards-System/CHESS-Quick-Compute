@@ -251,6 +251,61 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute --------------------------------------------------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Turns a Peaks-Over-Threshold peak sample into a coastal hazard curve '
+            '(response magnitude versus annual exceedance rate) by carrying the frequent '
+            'range empirically and splicing on a Generalized Pareto Distribution upper '
+            'tail, with a bootstrap confidence band. It reports magnitudes at standard '
+            'mean return intervals (e.g. 10-, 100-, 500-yr) plus the fitted GPD '
+            'parameters.',
+ 'methods': [{'name': 'Probabilistic Simulation Technique (empirical bulk + GPD tail)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\lambda_u = \\frac{n_{pot}}{T_R}',
+                             'desc': 'Population (base) exceedance rate from the POT count '
+                                     'over the record length T_R (auto = n_pot / '
+                                     'events-per-year).'},
+                            {'tex': '\\mathrm{AER}_i = \\frac{i}{n_{pot} + 1}\\, '
+                                    '\\lambda_u',
+                             'desc': 'Empirical annual exceedance rate of the rank-i '
+                                     '(descending) peak via the Weibull plotting '
+                                     'position.'},
+                            {'tex': '\\xi = \\frac{1}{2}\\left(1 - \\frac{m^2}{v}\\right)',
+                             'desc': 'Method-of-moments GPD shape from the mean m and '
+                                     'variance v of the exceedances above the location mu '
+                                     '(clipped to the Luceno band).'},
+                            {'tex': '\\sigma = m\\,(1 - \\xi)',
+                             'desc': 'Method-of-moments GPD scale from the exceedance mean '
+                                     'and the fitted shape.'},
+                            {'tex': 'x(p) = \\mu + \\frac{\\sigma}{\\xi}\\left[(1 - '
+                                    'p)^{-\\xi} - 1\\right]',
+                             'desc': 'GPD quantile (inverse CDF) giving the tail magnitude '
+                                     'at non-exceedance probability p = 1 - AER/lambda_mu; '
+                                     'reduces to mu - sigma ln(1-p) as xi -> 0.'},
+                            {'tex': '\\lambda_{\\mu} = \\frac{n_{\\mu}}{T_R}',
+                             'desc': 'Rate of exceedances above the GPD location mu, used '
+                                     'to map AER to the GPD probability scale and to '
+                                     'splice the tail onto the empirical bulk at AER = '
+                                     'lambda_mu.'}]}],
+ 'symbols': [['lambda_u', 'Population (base) annual exceedance rate of POT peaks (1/yr)'],
+             ['lambda_mu', 'Annual rate of exceedances above the GPD location mu (1/yr)'],
+             ['n_pot', 'Number of peaks-over-threshold in the sample'],
+             ['T_R',
+              'Effective record length in years (given or auto = n_pot / events-per-year)'],
+             ['AER', 'Annual exceedance rate of a peak (1/yr); return interval = 1/AER'],
+             ['mu', 'GPD location (threshold) selected by quantile delta optimization'],
+             ['xi', 'GPD shape parameter (clipped to the stability band)'],
+             ['sigma', 'GPD scale parameter'],
+             ['m, v', 'Sample mean and variance of the exceedances above mu'],
+             ['p', 'Non-exceedance probability on the GPD, p = 1 - AER/lambda_mu']],
+ 'references': ['Coles (2001), An Introduction to Statistical Modeling of Extreme Values '
+                '(GPD/POT)',
+                'Nadal-Caraballo et al., Probabilistic Simulation Technique (PST)',
+                'PyStorm PST module',
+                'USACE coastal-hazards practice']}
+
+
 def compute(inp: dict) -> Result:
     _validate(inp)
     values = _parse_values(str(inp.get("csv", _SAMPLE_CSV)))

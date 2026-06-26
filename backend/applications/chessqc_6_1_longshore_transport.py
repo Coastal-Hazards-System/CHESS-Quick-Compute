@@ -130,6 +130,57 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates the potential volumetric longshore sand transport rate along a '
+            'beach using the CERC energy-flux method, returning the rate in m^3/yr (and '
+            'yd^3/yr) together with the longshore energy-flux factor. The user supplies '
+            'either breaking-wave or deepwater wave conditions, which selects the '
+            'energy-flux formula.',
+ 'method_key': 'method',
+ 'methods': [{'name': 'Deepwater wave conditions',
+              'when': 'Deepwater wave conditions',
+              'tag': 'standard',
+              'note': 'Energy flux built from deepwater significant height and crest '
+                      'angle, folding in shoaling (K_s = 1.3) and the breaker index.',
+              'equations': [{'tex': 'P_{ls} = 0.04 \\, \\rho \\, g^{1.5} \\, H_{s0}^{2.5} '
+                                    '\\, (\\cos \\alpha_{0})^{0.25} \\sin(2 \\alpha_{0})',
+                             'desc': 'Deepwater longshore energy-flux factor (TR 6-1 eq '
+                                     '17; SPM 4-44 reduced).'},
+                            {'tex': 'Q = \\frac{K \\, P_{ls}}{(\\rho_{s} - \\rho) \\, g '
+                                    '\\, a}',
+                             'desc': 'CERC volumetric longshore transport rate (TR 6-1 eq '
+                                     '1), a = 1 - porosity.'}]},
+             {'name': 'Breaking wave conditions',
+              'when': 'Breaking wave conditions',
+              'tag': 'standard',
+              'note': 'Energy flux evaluated directly at the breaker line from breaker '
+                      'height and breaker angle.',
+              'equations': [{'tex': 'P_{ls} = 0.0707 \\, \\rho \\, g^{1.5} \\, H_{b}^{2.5} '
+                                    '\\sin(2 \\alpha_{b})',
+                             'desc': 'Breaking longshore energy-flux factor (TR 6-1 eq 11; '
+                                     'constant = (1/16)\\sqrt{1.28}).'},
+                            {'tex': 'Q = \\frac{K \\, P_{ls}}{(\\rho_{s} - \\rho) \\, g '
+                                    '\\, a}',
+                             'desc': 'CERC volumetric longshore transport rate (TR 6-1 eq '
+                                     '1), a = 1 - porosity.'}]}],
+ 'symbols': [['Q', 'Potential volumetric longshore transport rate (volume per unit time)'],
+             ['P_{ls}', 'Longshore energy-flux factor'],
+             ['K',
+              'Empirical CERC coefficient (0.39 for field data with significant wave '
+              'height)'],
+             ['H_b', 'Breaker significant wave height'],
+             ['H_{s0}', 'Deepwater significant wave height'],
+             ['alpha_b', 'Wave crest angle to shoreline at breaking'],
+             ['alpha_0', 'Deepwater wave crest angle to shoreline'],
+             ['rho_s', 'Sediment (sand) density; quartz ~2650 kg/m^3'],
+             ['rho', 'Water density; seawater ~1025 kg/m^3'],
+             ['a', 'Solids-to-total volume ratio, a = 1 - porosity (TR uses 0.6)']],
+ 'references': ['SPM (1984) Ch. 4 (Eq. 4-49)',
+                'Galvin (1979), CERC TP 79-1',
+                'Gravens (1988)',
+                'CESM/TR 6-1']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Longshore transport rate for SI inputs. Returns Q in m^3/yr (SI internal)."""
     _validate(inp)

@@ -166,6 +166,56 @@ def breaker_index(m: float) -> tuple[float, float]:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the wave-induced change in mean water level across the surf zone — '
+            'the small set-down just seaward of breaking and the larger set-up that raises '
+            'the mean waterline up the beach — from deepwater wave height, period and '
+            'beach slope using radiation-stress theory.',
+ 'methods': [{'name': 'Radiation-stress set-down and set-up (Longuet-Higgins & Stewart)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'L_0 = \\frac{g T^2}{2 \\pi}',
+                             'desc': 'Deepwater wavelength from the wave period (linear '
+                                     "dispersion); H'_0 = K_R H_0 is the unrefracted "
+                                     'equivalent deepwater height.'},
+                            {'tex': "H_b = H_0' \\, 0.575 \\, m^{0.031} \\left( "
+                                    "\\frac{H_0'}{L_0} \\right)^{-0.254}",
+                             'desc': 'Breaker height on a finite slope (Singamsetti & Wind '
+                                     '1980), valid roughly m = 0.02 to 0.2.'},
+                            {'tex': 'd_b = \\frac{H_b}{b - a \\, H_b/(g T^2)}, \\quad a = '
+                                    '43.8 (1 - e^{-19.5 m}), \\quad b = \\frac{1.56}{1 + '
+                                    'e^{-19.5 m}}',
+                             'desc': 'Breaker depth via the Weggel (1972) breaker index '
+                                     '(gravity-explicit SI form); gives the breaker index '
+                                     'gamma_b = H_b/d_b.'},
+                            {'tex': '\\eta_b = - \\frac{H_b^2 k_b}{8 \\sinh(2 k_b d_b)}',
+                             'desc': 'Set-down of the mean water level at the breaker line '
+                                     '(Longuet-Higgins & Stewart 1963); shallow-water '
+                                     'limit eta_b -> -gamma_b^2 d_b/16.'},
+                            {'tex': '\\frac{d\\eta}{dx} = m \\, \\frac{\\beta}{1 + '
+                                    '\\beta}, \\quad \\beta = \\frac{3 \\gamma_b^2}{8}',
+                             'desc': 'Cross-surf-zone set-up gradient (LH-S); marched '
+                                     'shoreward from eta_b to give set-up at the '
+                                     'shoreline, maximum set-up and shoreline '
+                                     'displacement.'}]}],
+ 'symbols': [["H_0'", "Unrefracted equivalent deepwater wave height, H_0' = K_R H_0"],
+             ['K_R', 'Refraction coefficient (1.0 = no refraction)'],
+             ['L_0', 'Deepwater wavelength'],
+             ['m', 'Beach slope, tan(beta_slope)'],
+             ['H_b', 'Breaker height'],
+             ['d_b', 'Still-water depth at breaking'],
+             ['gamma_b', 'Breaker index, H_b/d_b'],
+             ['k_b', 'Wavenumber at the breaker line (2 pi / L_b)'],
+             ['eta_b', 'Set-down of mean water level at breaking (negative)'],
+             ['beta', 'Radiation-stress set-up parameter, 3 gamma_b^2 / 8']],
+ 'references': ['Longuet-Higgins & Stewart (1962, 1963)',
+                'Weggel (1972)',
+                'Singamsetti & Wind (1980)',
+                'Hunt (1979)',
+                'docs/EQUATIONS.md ch. 8-1 (Miscellaneous Routines)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, n_profile: int = 121) -> Result:
     """Wave-setup results for SI inputs {H0, T, m, KR}."""
     _validate(inp)

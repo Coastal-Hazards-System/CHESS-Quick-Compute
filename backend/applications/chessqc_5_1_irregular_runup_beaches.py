@@ -139,6 +139,45 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates how high irregular waves run up a smooth, uniform, impermeable '
+            'beach slope using the Mase (1989) power-law fit in the Iribarren number, '
+            'returning five runup statistics: the maximum, the level exceeded by 2 percent '
+            'of runups, and the averages of the highest tenth, highest third, and all '
+            'runups.',
+ 'methods': [{'name': 'Mase (1989) power-law runup statistics',
+              'when': None,
+              'tag': '',
+              'note': 'Coefficient pairs (a_p, b_p): R_max = (2.32, 0.77); R_2% = (1.86, '
+                      '0.71); R_1/10 = (1.70, 0.71); R_1/3 = (1.38, 0.70); mean = (0.88, '
+                      '0.69). Mase (1989) gentle-slope data span roughly cot 5 to 30 and '
+                      'xi up to about 3.',
+              'equations': [{'tex': 'L_0 = \\frac{g \\, T_p^{2}}{2 \\pi}',
+                             'desc': 'Deepwater wavelength from the peak wave period.'},
+                            {'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{H_{s0} / L_0}}',
+                             'desc': 'Iribarren (surf-similarity) number from foreshore '
+                                     'slope and deepwater wave steepness.'},
+                            {'tex': 'R_p = H_{s0} \\, a_p \\, \\xi^{b_p}',
+                             'desc': 'Each runup statistic is a power law in the Iribarren '
+                                     'number with statistic-specific Mase (1989) '
+                                     'coefficients (a_p, b_p).'}]}],
+ 'symbols': [['R_p',
+              'Wave runup for statistic p (max, 2%, 1/10, 1/3, or mean), vertical height '
+              'above still-water level'],
+             ['H_s0', 'Deepwater significant wave height'],
+             ['T_p', 'Peak energy wave period'],
+             ['L_0', 'Deepwater wavelength'],
+             ['xi', 'Iribarren (surf-similarity) number'],
+             ['tan theta', 'Foreshore beach slope (= 1/cot theta)'],
+             ['a_p, b_p', 'Statistic-specific Mase (1989) power-law coefficients'],
+             ['g', 'Gravitational acceleration']],
+ 'references': ['Mase (1989)',
+                'Hunt (1959)',
+                'Walton & Ahrens (1989)',
+                'Mase & Iwagaki (1984)',
+                'ACES TR Chapter 5-1']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Irregular-wave runup statistics for SI inputs {Hs0, Tp, cot_theta}."""
     _validate(inp)

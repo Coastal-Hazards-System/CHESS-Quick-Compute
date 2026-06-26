@@ -134,6 +134,83 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes standing-wave (clapotis) pressures, total horizontal force, and '
+            'overturning moment on a vertical wall for a nonbreaking, reflected wave, '
+            'reporting both the crest and trough cases. Two classical theories are '
+            'evaluated side by side: Sainflou (1928) for low-steepness waves and the more '
+            'general Miche-Rundgren second-order theory (with reflection coefficient chi) '
+            'for steep waves.',
+ 'methods': [{'name': 'Miche-Rundgren second-order',
+              'when': None,
+              'tag': 'preferred',
+              'note': 'More general second-order theory; carries the reflection '
+                      'coefficient chi and reduces toward Sainflou as chi to 1. Wall '
+                      'surface elevations (eqs 12/13) are shared by both methods.',
+              'equations': [{'tex': '\\eta_{cr} = \\frac{H_i}{2}(1+\\chi) + \\frac{\\pi '
+                                    'H_i}{4}\\frac{H_i}{L}\\frac{\\cosh(2\\pi '
+                                    'd/L)}{\\sinh(2\\pi d/L)}\\left[(1+\\chi)^{2}\\theta_1 '
+                                    '+ (1-\\chi)^{2}\\theta_2\\right]',
+                             'desc': 'Crest elevation of the clapotis at the wall above '
+                                     'SWL (trough: leading sign becomes minus).'},
+                            {'tex': '\\theta_1 = 1 + \\frac{3}{4\\sinh^{2}(2\\pi d/L)} - '
+                                    '\\frac{1}{4\\cosh^{2}(2\\pi d/L)}',
+                             'desc': 'Second-order surface function (theta_2 drops the '
+                                     'leading 1); modulates the orbit-center rise.'},
+                            {'tex': '\\frac{p_{cr}}{\\gamma} = -y_0 - '
+                                    '\\frac{H_i}{2}(1+\\chi)\\frac{\\sinh(2\\pi '
+                                    'y_0/L)}{\\sinh(2\\pi d/L)\\cosh(2\\pi d/L)} - '
+                                    '\\frac{\\pi H_i}{4}\\frac{H_i}{L}\\frac{\\sinh(2\\pi '
+                                    'y_0/L)}{\\sinh^{2}(2\\pi '
+                                    'd/L)}\\left[(1+\\chi)^{2}\\theta_3 + '
+                                    '(1-\\chi)^{2}\\theta_4\\right]',
+                             'desc': 'Crest pressure at elevation y_0 on the wall (trough: '
+                                     'middle term sign flips to plus).'},
+                            {'tex': 'F = \\sum p \\, \\Delta z',
+                             'desc': 'Total force per unit length by numerical integration '
+                                     'of pressure over 90 stretched depth increments; '
+                                     'moment about the bottom M = sum of p (y_0 + d) Delta '
+                                     'z.'}]},
+             {'name': 'Sainflou',
+              'when': None,
+              'tag': 'legacy',
+              'note': 'Low-steepness first/second-order theory; retained to back-check '
+                      'legacy designs and bracket the Miche-Rundgren result.',
+              'equations': [{'tex': '\\eta_{sc} = H_i + \\pi H_i '
+                                    '\\frac{H_i}{L}\\frac{\\cosh(2\\pi d/L)}{\\sinh(2\\pi '
+                                    'd/L)}',
+                             'desc': 'Crest elevation at the wall above SWL; second term '
+                                     'is the orbit-center setup (trough: leading H_i '
+                                     'becomes minus).'},
+                            {'tex': '\\frac{p_{cr}}{\\gamma} = -y_0 - '
+                                    'H_i\\frac{\\sinh(2\\pi y_0/L)}{\\sinh(2\\pi '
+                                    'd/L)\\cosh(2\\pi d/L)}',
+                             'desc': 'Crest pressure at elevation y_0 on the wall (trough: '
+                                     'second term sign flips to plus).'},
+                            {'tex': 'F = \\sum p \\, \\Delta z',
+                             'desc': 'Total force per unit length by numerical '
+                                     'integration; overturning moment M = sum of p (y_0 + '
+                                     'd) Delta z about the wall base.'}]}],
+ 'symbols': [['H_i', 'Incident wave height'],
+             ['L', 'Wavelength at depth d (from Hunt 1979 dispersion)'],
+             ['d', 'Still-water depth at the wall'],
+             ['chi', 'Wave reflection coefficient (1.0 = full reflection)'],
+             ['gamma', 'Specific (unit) weight of water'],
+             ['y_0',
+              'At-rest vertical elevation of a water particle at the wall (from SWL, '
+              'negative below)'],
+             ['eta_cr', 'Crest surface elevation at the wall above SWL'],
+             ['theta_1, theta_2', 'Second-order surface functions of d/L'],
+             ['theta_3, theta_4', 'Second-order pressure functions of d/L and y_0'],
+             ['p_cr', 'Pressure on the wall at elevation y_0 (crest case)']],
+ 'references': ['Sainflou (1928)',
+                'Miche (1944)',
+                'Rundgren (1958)',
+                'Hunt (1979)',
+                'SPM (1984) Ch. 7',
+                'ACES TR 4-3']}
+
+
 def compute(inp: dict, *, g: float = G_SI, n_inc: int = 90) -> Result:
     """Vertical-wall standing-wave forces for SI inputs {d, H_i, T, chi, cot_phi, gamma}."""
     _validate(inp)

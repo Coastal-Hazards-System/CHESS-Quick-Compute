@@ -193,6 +193,54 @@ def deepwater_Q(H: float, delta_deg: float, K: float, rho: float, rho_s: float,
     return K * P_ls / ((rho_s - rho) * g * a_solid) * _YR
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates net and gross potential longshore sediment transport at a site by '
+            'applying the deepwater CERC energy-flux formula to a CEDRS percent-occurrence '
+            "wave climate, summing each directional band's contribution and reporting the "
+            'signed (net) and magnitude (gross) totals.',
+ 'methods': [{'name': 'Deepwater CERC over a CEDRS directional climate',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'Q = \\frac{K \\, P_{ls}}{(\\rho_s - \\rho) \\, g \\, '
+                                    'a}',
+                             'desc': 'CERC volumetric longshore transport rate from the '
+                                     'longshore energy-flux factor P_ls (TR 6-1 eq 1).'},
+                            {'tex': 'P_{ls} = 0.04 \\, \\rho \\, g^{3/2} \\, H_{s0}^{5/2} '
+                                    '\\, (\\cos \\alpha_0)^{1/4} \\, \\sin(2 \\alpha_0)',
+                             'desc': 'Deepwater longshore energy-flux factor; sign follows '
+                                     'sin(2 alpha_0), and cos is clamped at 0 for '
+                                     '|alpha_0| >= 90 deg (TR 6-1 eq 17).'},
+                            {'tex': 'f = \\frac{\\min(\\delta + \\Delta/2, \\, 90) - '
+                                    '\\max(\\delta - \\Delta/2, \\, -90)}{\\Delta}',
+                             'desc': 'Contributing fraction of a 22.5 deg band (Delta) at '
+                                     'angle delta to the shore normal that lies within '
+                                     '+/-90 deg of it.'},
+                            {'tex': 'Q_{band} = f \\sum_{h} p_h \\, Q_{deep}(H_h, \\delta)',
+                             'desc': 'Per-band transport: occurrence-weighted sum of the '
+                                     'deepwater CERC rate over the height bins, scaled by '
+                                     'the contributing fraction.'},
+                            {'tex': 'Q_{net} = \\sum_{b} Q_{band,b} , \\qquad Q_{gross} = '
+                                    '\\sum_{b} |Q_{band,b}|',
+                             'desc': 'Net is the signed sum over all directional bands; '
+                                     'gross is the sum of magnitudes.'}]}],
+ 'symbols': [['Q', 'Volumetric longshore sediment transport rate'],
+             ['K', 'Empirical CERC coefficient (0.39 for field significant-height data)'],
+             ['P_ls', 'Longshore energy-flux factor'],
+             ['rho_s', 'Sediment (sand) density; quartz ~2650 kg/m^3'],
+             ['rho', 'Water density; seawater ~1025 kg/m^3'],
+             ['a', 'Solids fraction of bed volume, a = 1 - porosity'],
+             ['H_s0', 'Deepwater significant wave height (bin midpoint H_h)'],
+             ['alpha_0', 'Deepwater wave angle to shore normal (band angle delta)'],
+             ['theta', 'Seaward shore-normal azimuth, clockwise from true north'],
+             ['p_h', 'Occurrence fraction of a height bin within a directional band']],
+ 'references': ['SPM (1984) Ch. 4 (Eq. 4-49)',
+                'Gravens (1988)',
+                'WIS Report 18 (Station G1033)',
+                "ACES User's Guide, Longshore Sediment Transport, Example 6-1-3",
+                'Galvin (1979)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Net/gross longshore transport from a CEDRS directional climate (SI internal)."""
     _validate(inp)

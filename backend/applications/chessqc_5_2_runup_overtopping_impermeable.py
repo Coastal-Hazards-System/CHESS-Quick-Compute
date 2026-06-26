@@ -223,6 +223,85 @@ def _overtop_eurotop(Hm0, T, theta, Rc, gamma_f, g):
     return min(q_break, q_max) * base
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes wave runup on a smooth or rough impermeable structure slope '
+            '(seawall/revetment face) and, when runup exceeds the crest, the resulting '
+            'mean overtopping rate per unit length, for monochromatic or irregular waves '
+            'with an optional onshore-wind correction. Reports the surf-similarity number, '
+            'runup, freeboard, wind factor, and overtopping discharge.',
+ 'method_key': 'overtopping_method',
+ 'methods': [{'name': 'Weggel (1976) overtopping (ACES)',
+              'when': 'Weggel',
+              'tag': 'legacy',
+              'note': "ACES default, retained to reproduce the User's Guide Examples and "
+                      'back-check legacy designs.',
+              'equations': [{'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{H_i/L_0}}',
+                             'desc': 'Surf-similarity (Iribarren) number; theta is the '
+                                     'structure seaward-face angle, L_0 deepwater '
+                                     'wavelength.'},
+                            {'tex': 'R = \\frac{H_i\\,a\\,\\xi}{1 + b\\,\\xi}',
+                             'desc': 'Rough-slope runup (Ahrens & McCartney 1975); a, b '
+                                     'empirical per armor type.'},
+                            {'tex': 'Q = '
+                                    "C_w\\sqrt{g\\,Q^{*}_{0}\\,H'^{3}_{0}}\\left(\\frac{R+F}{R-F}\\right)^{-0.1085/\\alpha}",
+                             'desc': 'Monochromatic overtopping rate per unit length; F = '
+                                     "h_s - d_s freeboard, H'_0 unrefracted deepwater "
+                                     'height.'},
+                            {'tex': 'C_w = 1 + W_f\\left(\\frac{F}{R} + '
+                                    '0.1\\right)\\sin\\theta',
+                             'desc': 'Onshore-wind correction factor, with W_f = U^2/1800 '
+                                     '(U in mph).'},
+                            {'tex': 'Q = \\frac{1}{199}\\sum_{i=1}^{199} Q_i,\\, R_i = '
+                                    '\\sqrt{\\frac{\\ln(1/p_i)}{2}}\\,R_s',
+                             'desc': 'Irregular-wave average over a Rayleigh runup '
+                                     'distribution; p_i = 0.005 i.'}]},
+             {'name': 'EurOtop (2018) mean discharge (modern standard)',
+              'when': 'EurOtop',
+              'tag': 'preferred',
+              'note': 'Modern dimensionless overtopping standard (eqs 5.10/5.11) with '
+                      'roughness factor gamma_f; no ACES oracle exists, validated for '
+                      'physical limits/monotonicity.',
+              'equations': [{'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{H_i/L_0}}',
+                             'desc': 'Surf-similarity number used by the shared runup '
+                                     'methods.'},
+                            {'tex': 'R = \\frac{H_i\\,a\\,\\xi}{1 + b\\,\\xi}',
+                             'desc': 'Rough-slope runup (Ahrens & McCartney 1975), '
+                                     'unaffected by the overtopping-method choice.'},
+                            {'tex': '\\frac{q}{\\sqrt{g\\,H_{m0}^{3}}} = '
+                                    '\\frac{0.023}{\\sqrt{\\tan\\theta}}\\,\\xi\\,\\exp\\left(-\\left(\\frac{2.7\\,R_c}{\\xi\\,H_{m0}\\,\\gamma_f}\\right)^{1.3}\\right)',
+                             'desc': 'EurOtop breaking-wave mean discharge (eq 5.10); R_c '
+                                     'crest freeboard, gamma_f roughness factor.'},
+                            {'tex': '\\frac{q}{\\sqrt{g\\,H_{m0}^{3}}} = '
+                                    '0.09\\,\\exp\\left(-\\left(\\frac{1.5\\,R_c}{H_{m0}\\,\\gamma_f}\\right)^{1.3}\\right)',
+                             'desc': 'EurOtop non-breaking maximum (eq 5.11); the smaller '
+                                     'of the two governs.'}]}],
+ 'symbols': [['R', 'Wave runup height above still-water level'],
+             ['H_i',
+              'Incident wave height at the structure toe (significant height for irregular '
+              'waves)'],
+             ['xi', 'Surf-similarity (Iribarren) number'],
+             ['theta', 'Structure seaward-face slope angle'],
+             ['L_0', 'Deepwater wavelength'],
+             ['a, b',
+              'Ahrens & McCartney rough-slope runup coefficients (per armor type, Table '
+              'A-3)'],
+             ['Q', 'Overtopping discharge rate per unit crest length'],
+             ['F', 'Crest freeboard, F = h_s - d_s (structure height minus toe depth)'],
+             ['Qstar0, alpha',
+              'Weggel empirical overtopping coefficients (SPM 1984 figures)'],
+             ['gamma_f',
+              'EurOtop roughness reduction factor (~0.55 rough rock, 1.0 smooth)']],
+ 'references': ['Ahrens & McCartney (1975)',
+                'Ahrens & Titus (1985)',
+                'Ahrens & Burke (unpublished)',
+                'Weggel (1976)',
+                'Goda (1983)',
+                'Douglass (1986)',
+                'Ahrens (1977)',
+                'SPM (1984) Ch. 7',
+                'EurOtop (2018)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Runup and overtopping for SI inputs (see INPUTS)."""
     _validate(inp)

@@ -199,6 +199,60 @@ def _breaker(H0: float, L0: float, T: float, m: float):
 
 
 # --- compute (single entry point both front-ends call) --------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Transforms a wave of known height, period and crest angle from one depth to '
+            "deep water and to a subject depth using linear wave theory, Snell's law for "
+            'refraction and energy-flux conservation for shoaling. Reports height, crest '
+            'angle, length, celerity, group velocity, energy density/flux and Ursell '
+            'number at each location, plus the Weggel breaker height and depth.',
+ 'methods': [{'name': "Snell's law + energy-flux shoaling/refraction",
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\frac{c}{c_{0}} = \\frac{\\sin \\alpha}{\\sin '
+                                    '\\alpha_{0}}',
+                             'desc': "Snell's law: ratio of celerities equals ratio of "
+                                     "sines of the crest-to-contour angles (O'Brien "
+                                     '1942).'},
+                            {'tex': 'K_{s} = \\sqrt{\\frac{C_{g0}}{C_{g}}}',
+                             'desc': 'Shoaling coefficient from energy-flux conservation '
+                                     '(E = rho g H^2/8, P = E C_g).'},
+                            {'tex': 'K_{r} = \\sqrt{\\frac{\\cos \\alpha_{0}}{\\cos '
+                                    '\\alpha}}',
+                             'desc': 'Refraction coefficient for straight, parallel depth '
+                                     'contours (orthogonal spacing ratio).'},
+                            {'tex': '\\frac{H}{H_{0}} = K_{r} \\cdot K_{s}',
+                             'desc': 'Combined transformation: height ratio is the product '
+                                     'of refraction and shoaling coefficients.'},
+                            {'tex': 'H_{b} = 0.575 \\, H_{0} \\, m^{0.031} '
+                                    '\\left(\\frac{H_{0}}{L_{0}}\\right)^{-0.254}',
+                             'desc': 'Breaker height for finite nearshore slope m = '
+                                     'tan(phi) (Singamsetti & Wind 1980).'},
+                            {'tex': 'd_{b} = \\frac{H_{b}}{b - a \\, H_{b}/T^{2}}',
+                             'desc': 'Breaker depth (Weggel 1972), b = '
+                                     '1/(0.64(1+e^{-19.5m})), a = 1.36(1-e^{-19m}); '
+                                     'US-calibrated.'}]}],
+ 'symbols': [['c, c_0', 'Wave celerity at the depth contour and in deep water'],
+             ['alpha, alpha_0',
+              'Angle between wave crest and depth contour (subject and deep water)'],
+             ['C_g, C_g0', 'Group velocity at a finite depth and in deep water'],
+             ['K_s', 'Shoaling coefficient, sqrt(C_g0/C_g)'],
+             ['K_r', 'Refraction coefficient, sqrt(cos alpha_0 / cos alpha)'],
+             ['H_0, L_0', 'Deepwater wave height and wavelength'],
+             ['m', 'Nearshore beach slope, tan(phi) = 1/cot(phi)'],
+             ['H_b, d_b', 'Breaker height and breaker depth'],
+             ['T', 'Wave period'],
+             ['U_r', 'Ursell number, H L^2 / d^3 (linearity check)']],
+ 'references': ["O'Brien (1942)",
+                'Hunt (1979)',
+                'Weggel (1972)',
+                'Singamsetti & Wind (1980)',
+                'McCowan (1894)',
+                'SPM (1984)',
+                'Dean & Dalrymple (1984)',
+                'ACES TR 3-1 (eqs 1-7); breaker from TR 6-1']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho: float | None = None) -> Result:
     """Snell's-law wave transformation for SI inputs
     {H1, T, d1, alpha1[deg], cot_phi, d2, water}. Water density follows the `water`

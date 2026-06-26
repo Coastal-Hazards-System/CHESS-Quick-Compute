@@ -177,6 +177,83 @@ def _validate(inp):
             raise ValueError(f"{fdef.label} ({fdef.key}) = {v} outside [{fdef.lo:g}, {fdef.hi:g}]")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates open-coast hurricane storm surge along a single cross-shelf '
+            "traverse using Bodine's (1971) quasi-1D bathystrophic method, integrating the "
+            'vertically-averaged equations of motion as a parametric storm sweeps past. '
+            'Returns the peak still-water rise at the shore and its wind, bathystrophic, '
+            'and pressure components.',
+ 'method_key': 'wind_model',
+ 'methods': [{'name': 'Holland (1980) wind field',
+              'when': 'Holland (1980)',
+              'tag': 'preferred',
+              'note': 'Modern standard; shape factor B (default 1.5) adjustable, or set by '
+                      'an explicit Vmax via B = rho_a e Vmax^2 / dP.',
+              'equations': [{'tex': 'p(r) = P_c + \\Delta P \\, '
+                                    '\\exp\\left(-\\left(\\frac{R}{r}\\right)^{B}\\right)',
+                             'desc': 'Holland radial surface-pressure profile (deficit dP '
+                                     '= Pn - Pc).'},
+                            {'tex': 'V_{gr}(r) = \\sqrt{\\frac{B \\, \\Delta '
+                                    'P}{\\rho_a}\\left(\\frac{R}{r}\\right)^{B}\\exp\\left(-\\left(\\frac{R}{r}\\right)^{B}\\right) '
+                                    '+ \\left(\\frac{r f}{2}\\right)^{2}} - \\frac{r f}{2}',
+                             'desc': 'Gradient-wind speed; surface-reduced and split into '
+                                     'onshore/alongshore components.'},
+                            {'tex': '\\frac{dS_x}{dx} = \\frac{k \\, W^{2} \\cos\\theta}{g '
+                                    'D}',
+                             'desc': 'Onshore wind setup gradient (eq 15/23).'},
+                            {'tex': '\\frac{dS_y}{dx} = \\frac{f V}{g D}',
+                             'desc': 'Bathystrophic (Coriolis) setup gradient from '
+                                     'alongshore transport (eq 24).'},
+                            {'tex': '\\frac{dV}{dt} = k \\, W^{2} \\sin\\theta - \\frac{K '
+                                    'V |V|}{D^{2}}',
+                             'desc': 'Alongshore transport balance: wind stress minus '
+                                     'bottom friction (eq 16).'},
+                            {'tex': 'S = S_x + S_y + S_e + S_A + S_{dp} + S_w',
+                             'desc': 'Composite still-water rise at the shore (eq 34).'}]},
+             {'name': 'Myers (1954) / Bodine wind field',
+              'when': 'Myers / Bodine (1954)',
+              'tag': 'legacy',
+              'note': 'Holland profile with B locked to 1; retained to reproduce the '
+                      'original Bodine TM-35 graphical examples.',
+              'equations': [{'tex': 'p(r) = P_c + \\Delta P \\, '
+                                    '\\exp\\left(-\\frac{R}{r}\\right)',
+                             'desc': 'Myers exponential pressure profile (Holland with B = '
+                                     '1).'},
+                            {'tex': 'V_{gr}(r) = \\sqrt{\\frac{\\Delta '
+                                    'P}{\\rho_a}\\left(\\frac{R}{r}\\right)\\exp\\left(-\\frac{R}{r}\\right) '
+                                    '+ \\left(\\frac{r f}{2}\\right)^{2}} - \\frac{r f}{2}',
+                             'desc': 'Gradient-wind speed for B = 1.'},
+                            {'tex': '\\frac{dS_x}{dx} = \\frac{k \\, W^{2} \\cos\\theta}{g '
+                                    'D}',
+                             'desc': 'Onshore wind setup gradient (eq 15/23).'},
+                            {'tex': '\\frac{dS_y}{dx} = \\frac{f V}{g D}',
+                             'desc': 'Bathystrophic (Coriolis) setup gradient (eq 24).'},
+                            {'tex': '\\frac{dV}{dt} = k \\, W^{2} \\sin\\theta - \\frac{K '
+                                    'V |V|}{D^{2}}',
+                             'desc': 'Alongshore transport balance (eq 16).'},
+                            {'tex': 'S = S_x + S_y + S_e + S_A + S_{dp} + S_w',
+                             'desc': 'Composite still-water rise at the shore (eq 34).'}]}],
+ 'symbols': [['S', 'Total still-water surge at the shore'],
+             ['S_x', 'Onshore wind setup component'],
+             ['S_y', 'Bathystrophic (Coriolis) setup component'],
+             ['S_{dp}', 'Pressure (inverse-barometer) setup component'],
+             ['W', 'Surface wind speed driving the stress'],
+             ['theta', 'Wind direction relative to the traverse (onshore vs alongshore)'],
+             ['V', 'Vertically-integrated alongshore transport (flux)'],
+             ['D', 'Total water depth (still-water depth plus setup)'],
+             ['k', 'Surface wind-stress coefficient (Van Dorn 1953)'],
+             ['K', 'Bottom friction coefficient (~0.0025)'],
+             ['B', 'Holland shape (peakedness) factor; B = 1 for Myers/Bodine'],
+             ['dP', 'Central pressure deficit, Pn - Pc'],
+             ['f', 'Coriolis parameter, 2 omega sin(lat)'],
+             ['R', 'Radius of maximum winds']],
+ 'references': ['Bodine (1971) TM-35',
+                'Pararas-Carayannis (1975) TM-50',
+                'Holland (1980)',
+                'Myers (1954)',
+                'Van Dorn (1953)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho_w: float = RHO_W) -> Result:
     """Bathystrophic surge along a traverse. SI inputs; the GUI converts at the edge."""
     _validate(inp)

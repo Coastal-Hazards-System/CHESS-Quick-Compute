@@ -196,6 +196,55 @@ def _resolve_geometry(inp: dict) -> tuple:
     return A, B, Rmax
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': "Reconstructs a tropical cyclone's radial structure from the Holland (1980) "
+            'two-parameter model, returning the radial pressure profile, the gradient- and '
+            'cyclostrophic-wind profiles, and the maximum wind speed.',
+ 'methods': [{'name': 'Holland (1980) two-parameter cyclone model',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'p(r) = p_c + \\Delta p \\, '
+                                    '\\exp\\left[-\\left(\\frac{R_{max}}{r}\\right)^{B}\\right]',
+                             'desc': 'Holland radial surface-pressure profile; p rises '
+                                     'from p_c at the eye toward p_n far away.'},
+                            {'tex': '\\Delta p = p_n - p_c',
+                             'desc': 'Pressure deficit (must be positive) driving the '
+                                     'storm.'},
+                            {'tex': 'R_{max} = A^{1/B}',
+                             'desc': 'Radius of maximum wind set by the scaling parameter '
+                                     'A and peakedness B; fixing any two of {A, B, R_max} '
+                                     'gives the third.'},
+                            {'tex': 'V_{gr}(r) = \\sqrt{\\frac{B \\, \\Delta '
+                                    'p}{\\rho_a}\\left(\\frac{R_{max}}{r}\\right)^{B} '
+                                    '\\exp\\left[-\\left(\\frac{R_{max}}{r}\\right)^{B}\\right] '
+                                    '+ \\left(\\frac{r f}{2}\\right)^{2}} - \\frac{r f}{2}',
+                             'desc': 'Gradient-wind profile including the Coriolis term; f '
+                                     '= 2 omega sin(lat).'},
+                            {'tex': 'V_c(r) = \\sqrt{\\frac{B \\, \\Delta '
+                                    'p}{\\rho_a}\\left(\\frac{R_{max}}{r}\\right)^{B} '
+                                    '\\exp\\left[-\\left(\\frac{R_{max}}{r}\\right)^{B}\\right]}',
+                             'desc': 'Cyclostrophic wind (the f -> 0 limit), an upper '
+                                     'bound on the gradient wind.'},
+                            {'tex': 'V_{max} = \\sqrt{\\frac{B \\, \\Delta p}{\\rho_a \\, '
+                                    'e}}',
+                             'desc': 'Closed-form cyclostrophic maximum wind, attained at '
+                                     'r = R_max.'}]}],
+ 'symbols': [['p(r)', 'surface pressure at radius r'],
+             ['p_c', 'storm central (eye) pressure'],
+             ['p_n', 'peripheral / ambient pressure'],
+             ['Delta p', 'pressure deficit, p_n minus p_c'],
+             ['R_max', 'radius of maximum wind'],
+             ['A', 'length-scaling parameter (units m^B)'],
+             ['B', 'Holland peakedness/shape parameter (~0.5-2.5)'],
+             ['V_gr', 'gradient wind speed at radius r'],
+             ['V_c', 'cyclostrophic wind speed (f -> 0 limit)'],
+             ['rho_a', 'ambient air density'],
+             ['f', 'Coriolis parameter, 2 omega sin(latitude)']],
+ 'references': ['Holland (1980) Mon. Wea. Rev. 108, 1212-1218',
+                'ACES help manual (Holland hurricane wind model)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Holland (1980) wind/pressure profiles for SI inputs (pressures Pa, radii m)."""
     _validate(inp)

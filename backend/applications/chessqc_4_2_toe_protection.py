@@ -132,6 +132,53 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute --------------------------------------------------------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Sizes the toe-protection apron for a vertical wall, bulkhead, or revetment: '
+            'the apron width is the larger of a geotechnical (Rankine passive) width and '
+            'two hydraulic minima, and the toe-stone weight follows a Hudson-form sizing '
+            'equation using the Tanimoto-Yagyu-Goda (1982) stability number.',
+ 'methods': [{'name': 'Toe apron width and toe-stone weight (Tanimoto-Yagyu-Goda)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'B = \\max(K_p\\,d_e,\\, 2\\,H_i,\\, 0.4\\,d_s)',
+                             'desc': 'Design apron width: largest of the Rankine '
+                                     'geotechnical width and the two EM 1110-2-1614 '
+                                     'hydraulic minima (eqs 1-4).'},
+                            {'tex': 'W = \\frac{w_r\\,H_i^{3}}{N_s^{3}\\,(S_r - 1)^{3}}',
+                             'desc': 'Toe-stone weight, Hudson/SPM (1984) form, with S_r = '
+                                     'w_r/w_w (eq 5).'},
+                            {'tex': 'N_s = \\max\\left[ '
+                                    '1.3\\,\\frac{1-K}{K^{1/3}}\\,\\frac{d_1}{H_i} + '
+                                    '1.8\\,\\exp\\left(-1.5\\,\\frac{(1-K)^{2}}{K^{1/3}}\\,\\frac{d_1}{H_i}\\right),\\, '
+                                    '1.8 \\right]',
+                             'desc': 'Tanimoto-Yagyu-Goda (1982) stability number, floored '
+                                     'at 1.8 (eq 6).'},
+                            {'tex': 'K = '
+                                    '\\frac{4\\pi\\,d_1/L}{\\sinh(4\\pi\\,d_1/L)}\\,\\sin^{2}\\!\\left(\\frac{2\\pi\\,B}{L}\\right)',
+                             'desc': 'Velocity parameter at the apron edge from '
+                                     'standing-wave linear theory; L is the wavelength at '
+                                     'depth d_1 (eq 6).'}]}],
+ 'symbols': [['B', 'Design width of the toe-protection apron'],
+             ['W', 'Weight of an individual toe-stone armor unit'],
+             ['N_s', 'Tanimoto-Yagyu-Goda stability number (floored at 1.8)'],
+             ['K', 'Velocity parameter at the apron edge from standing-wave theory'],
+             ['K_p', 'Rankine passive earth-pressure coefficient'],
+             ['d_e', 'Sheet-pile penetration depth (0 if no pile)'],
+             ['H_i', 'Incident (design) wave height at the structure'],
+             ['d_s', 'Water depth at the structure'],
+             ['d_1', 'Water depth at top of the toe layer (d_s - h_b)'],
+             ['S_r', 'Specific gravity of armor stone, w_r/w_w']],
+ 'references': ['EM 1110-2-1614',
+                'Tanimoto, Yagyu & Goda (1982)',
+                'Hudson (1959)',
+                'SPM (1984)',
+                'Eckert (1983)',
+                'Eckert & Callender (1987)',
+                'Hunt (1979)',
+                'ACES TR 4-2']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Toe-protection design for SI inputs
     {H_i, T, d_s, cot_phi, K_p, d_e, h_b, w_r[N/m^3], w_w[N/m^3]}."""

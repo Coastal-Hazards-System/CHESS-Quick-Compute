@@ -151,6 +151,55 @@ def line_axial_stiffness(B_kN: float, e_pct: float, L: float) -> float:
     return (B_kN * _KN) / ((e_pct / 100.0) * L)
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Models a moored vessel as a mass on a set of axial-spring mooring lines: it '
+            "resolves each line's stiffness onto the surge axis, adds hydrodynamic added "
+            'mass, and returns the natural surge period along with the forward, reverse, '
+            'and total surge spring constants and per-line loading.',
+ 'methods': [{'name': 'Linear moored-vessel surge mechanics',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'k_{axial} = \\frac{B}{(e/100)\\, L}',
+                             'desc': 'Axial spring rate of a line with breaking strength B '
+                                     'reached at elongation e (percent) of length L.'},
+                            {'tex': 'k_{x} = k_{axial} \\cos^{2}\\alpha',
+                             'desc': 'Surge-axis stiffness contributed by a line at angle '
+                                     'alpha to the forward axis (small-displacement '
+                                     'projection).'},
+                            {'tex': 'k_{total} = k_{fwd} + k_{rev} = \\sum_{i} k_{axial,i} '
+                                    '\\cos^{2}\\alpha_{i}',
+                             'desc': 'Total surge stiffness summed over all pretensioned '
+                                     'lines (parallel springs); partitioned into forward '
+                                     'and reverse parts by the sign of cos alpha.'},
+                            {'tex': 'm_{v} = m\\,(1 + C_{a})',
+                             'desc': 'Virtual (surge) mass: ship displacement mass plus '
+                                     'hydrodynamic added mass.'},
+                            {'tex': 'T_{S} = 2\\pi \\sqrt{\\frac{m_{v}}{k_{total}}}',
+                             'desc': 'Natural surge period of the moored vessel.'},
+                            {'tex': '\\mathrm{load} = \\frac{T}{B} \\cdot 100',
+                             'desc': 'Line load as a percent of breaking strength; the '
+                                     'impact flag trips when T exceeds the '
+                                     'safe-working-load fraction times B.'}]}],
+ 'symbols': [['B', 'Line breaking strength'],
+             ['e', 'Line elongation at break, percent of length'],
+             ['L', 'Line length'],
+             ['k_{axial}', 'Axial spring rate of a single line'],
+             ['alpha', 'Angle from the forward (surge) axis to the line anchor'],
+             ['k_{fwd}',
+              'Forward surge spring constant (sum over lines with cos alpha >= 0)'],
+             ['k_{rev}', 'Reverse surge spring constant (sum over aft lines)'],
+             ['k_{total}', 'Total surge spring constant'],
+             ['m_{v}', 'Virtual surge mass (ship plus added mass)'],
+             ['C_{a}', 'Surge added-mass coefficient (~0.05-0.25 for ships)'],
+             ['T_{S}', 'Natural surge period'],
+             ['T', 'Line pretension load']],
+ 'references': ['EM 1110-2-1100 (Coastal Engineering Manual) Part II',
+                'PIANC mooring guidelines',
+                'Bruun, Port Engineering',
+                'ACES Help Manual, Surging of a Moored Vessel']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Moored-vessel surge stiffness, natural period, and line loading (SI inputs)."""
     _validate(inp)

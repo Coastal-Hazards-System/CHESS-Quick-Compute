@@ -165,6 +165,50 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes first-order (Airy/linear) wave properties from wave height, period, '
+            'and water depth: wavelength, celerity, group velocity, energy density and '
+            'flux, the Ursell parameter, plus the pressure and particle kinematics '
+            '(displacements, velocities, accelerations) at a chosen depth and phase.',
+ 'methods': [{'name': 'Linear (Airy) wave theory',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\omega^{2} = g\\,k\\,\\tanh(kd)',
+                             'desc': 'Linear dispersion relation linking radian frequency, '
+                                     'wavenumber, and depth.'},
+                            {'tex': 'c^{2} = g\\,d\\,[\\,y + (1 + \\sum_{n=1}^{9} '
+                                    'd_{n}\\,y^{n})^{-1}\\,]^{-1}, \\quad y = \\omega^{2} '
+                                    'd / g',
+                             'desc': 'Hunt (1979) explicit Pade celerity solving the '
+                                     'dispersion relation (accuracy < 0.01%).'},
+                            {'tex': 'C_{g} = \\frac{c}{2}\\,(1 + \\frac{2kd}{\\sinh(2kd)})',
+                             'desc': 'Group velocity (energy transport speed).'},
+                            {'tex': 'E = \\frac{1}{8}\\,\\rho\\,g\\,H^{2}',
+                             'desc': 'Average wave energy density per unit surface area.'},
+                            {'tex': 'P = E\\,C_{g}',
+                             'desc': 'Wave energy flux (power) per unit crest width.'},
+                            {'tex': 'U_{r} = \\frac{H\\,L^{2}}{d^{3}}',
+                             'desc': 'Ursell parameter; linear theory becomes questionable '
+                                     'above about 26.'}]}],
+ 'symbols': [['H', 'Wave height (= 2a)'],
+             ['T', 'Wave period'],
+             ['d', 'Still-water depth'],
+             ['L', 'Wavelength (L = cT)'],
+             ['c', 'Wave celerity (phase speed)'],
+             ['k', 'Wavenumber (2*pi/L)'],
+             ['omega', 'Radian frequency (2*pi/T)'],
+             ['C_g', 'Group velocity'],
+             ['rho', 'Water density (salt or fresh)'],
+             ['U_r', 'Ursell parameter']],
+ 'references': ['Airy (1845)',
+                'Hunt (1979)',
+                'SPM (1984)',
+                'Dean & Dalrymple (1984)',
+                'Stokes (1847); Ursell (1953)',
+                'ACES TR 2-1']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho: float | None = None,
             n_profile: int = 201) -> Result:
     """Linear-wave-theory results for SI inputs {H, T, d, z, xL, water}.

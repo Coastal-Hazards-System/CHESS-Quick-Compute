@@ -263,6 +263,51 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Synthesizes a water-level time series at a tide gage from harmonic tidal '
+            'constituents (per-constituent amplitude and epoch), summing each constituent '
+            'with astronomically computed node factors and equilibrium arguments. Returns '
+            'the elevation profile plus its max, min, range, and starting value.',
+ 'methods': [{'name': 'Classical harmonic tide synthesis (Schureman)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'h = H_0 + \\sum_{n=1}^{N} f_n \\, A_n \\cos\\left[ '
+                                    'a_n t + (V_0 + u)_n - \\kappa_n \\right]',
+                             'desc': 'Full harmonic synthesis (TR 1-4-2 eq 2): tide '
+                                     'elevation at time t as the sum of N constituents '
+                                     'above datum H_0.'},
+                            {'tex': 'h_n = A_n \\cos\\left( a_n t + \\alpha_n \\right)',
+                             'desc': 'Contribution of a single harmonic constituent n (TR '
+                                     '1-4-1 eq 1); alpha_n is its phase at the initial '
+                                     'epoch.'},
+                            {'tex': '(V_0)_n = c_T T + c_s s + c_h h + c_p p + c_{p_1} p_1 '
+                                    '+ C_n',
+                             'desc': 'Equilibrium argument from the astronomical '
+                                     "longitudes, with the constituent's integer "
+                                     'multipliers from Table A-5.'},
+                            {'tex': 'T = 15 \\, H',
+                             'desc': 'Hour-angle term in mean solar time measured from '
+                                     'local midnight (H = start hour of day), the ACES '
+                                     'longitude convention.'}]}],
+ 'symbols': [['h', 'tide elevation at time t (above prediction datum)'],
+             ['H_0', 'mean water level above the prediction datum'],
+             ['A_n', 'amplitude of constituent n (user input)'],
+             ['kappa_n', 'local phase lag (epoch) of constituent n, degrees (user input)'],
+             ['a_n', 'angular speed of constituent n, deg/hr (Table A-5)'],
+             ['f_n', 'node factor of constituent n (Schureman astronomy)'],
+             ['(V_0+u)_n',
+              'local equilibrium argument of constituent n at the initial epoch'],
+             ['t', 'time measured from the initial epoch'],
+             ['s, h, p, p_1',
+              'mean longitudes of moon, sun, lunar perigee, and solar perigee'],
+             ['N', 'number of active constituents']],
+ 'references': ['Schureman (1971), C&GS Special Pub. 98 (reprint of 1940)',
+                'Harris (1981), WES SR-7',
+                'Headquarters DA (1989), EM 1110-2-1414 Ch. 2',
+                'ACES Appendix Table A-5 (constituent speeds)']}
+
+
 def compute(inp: dict) -> Result:
     """Constituent tide record for SI inputs. Returns the elevation time series."""
     _validate(inp)

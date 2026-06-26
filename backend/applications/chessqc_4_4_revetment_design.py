@@ -204,6 +204,90 @@ def _runup_eurotop(Hs, Ts, ds, cot_theta, gamma_f, g):
     return ru_mean, ru_design
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Sizes the armor and filter (bedding) stone for a rubble-mound riprap '
+            'revetment under irregular waves, returning the median stone weight, the full '
+            'weight/size gradation and layer thicknesses, the governing stability number, '
+            'and the expected and conservative wave runup. The armor is sized with the '
+            'Hudson (1958) form using the larger of the CERC (Ahrens 1981) and van der '
+            'Meer (1988) stability numbers; runup is computed by either the ACES Ahrens & '
+            'Heimbaugh method or the modern EurOtop Ru2% standard.',
+ 'method_key': 'runup_method',
+ 'methods': [{'name': 'Hudson sizing with Ahrens & Heimbaugh (1988) runup',
+              'when': 'Ahrens-Heimbaugh',
+              'tag': 'legacy',
+              'note': "ACES default; retained to reproduce the User's Guide example (runup "
+                      'choice does not affect armor sizing).',
+              'equations': [{'tex': 'W_{50} = \\frac{w_r\\,H_s^{3}}{N_s^{3}\\,(S_r-1)^{3}}',
+                             'desc': 'Median armor weight, Hudson (1958) form for '
+                                     'irregular waves (eq 1); N_s is the larger of the '
+                                     'CERC and van der Meer values.'},
+                            {'tex': 'N_s = \\frac{1.45}{1.27}\\,(\\cot\\theta)^{1/6}',
+                             'desc': 'CERC zero-damage stability number (Ahrens 1981), '
+                                     'adjusted from H_10 to H_s by 1.27 (eq 3).'},
+                            {'tex': 'N_s = '
+                                    '6.2\\,P^{0.18}\\,(S/\\sqrt{N})^{0.2}\\,\\xi_z^{-0.5}',
+                             'desc': 'van der Meer (1988) plunging-wave stability number, '
+                                     'used when xi_z <= xi_scp (eq 4); ACES applies a 1.2 '
+                                     'shallow-water factor.'},
+                            {'tex': 'N_s = '
+                                    'P^{-0.13}\\,(S/\\sqrt{N})^{0.2}\\,\\sqrt{\\cot\\theta}\\,\\xi_z^{P}',
+                             'desc': 'van der Meer (1988) surging-wave stability number, '
+                                     'used when xi_z > xi_scp (eq 5).'},
+                            {'tex': '\\xi_z = \\frac{\\tan\\theta}{\\sqrt{2\\pi '
+                                    'H_s/(g\\,T_z^{2})}}',
+                             'desc': 'Surf-similarity (Iribarren) parameter using the '
+                                     'average period T_z = T_s (0.67/0.80) (eq 6).'},
+                            {'tex': 'R_{max} = H_{m0}\\,\\frac{a\\,\\xi_z}{1 + '
+                                    '0.247\\,\\xi_z}',
+                             'desc': 'Maximum runup (Ahrens & Heimbaugh 1988, eq 24); a = '
+                                     '1.022 expected, a = 1.286 conservative.'}]},
+             {'name': 'Hudson sizing with EurOtop (2018) Ru2% runup',
+              'when': 'EurOtop',
+              'tag': 'preferred',
+              'note': 'EurOtop (2018), the current European standard for Ru2% runup with '
+                      'roughness factor gamma_f; armor sizing is unchanged.',
+              'equations': [{'tex': 'W_{50} = \\frac{w_r\\,H_s^{3}}{N_s^{3}\\,(S_r-1)^{3}}',
+                             'desc': 'Median armor weight, Hudson (1958) form for '
+                                     'irregular waves (eq 1); identical to the '
+                                     'Ahrens-Heimbaugh path.'},
+                            {'tex': 'N_s = \\frac{1.45}{1.27}\\,(\\cot\\theta)^{1/6}',
+                             'desc': 'CERC zero-damage stability number (Ahrens 1981); '
+                                     'governing N_s is the larger of CERC and van der Meer '
+                                     '(eqs 3-5).'},
+                            {'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{2\\pi '
+                                    'H_{m0}/(g\\,T_{m-1,0}^{2})}}',
+                             'desc': 'Surf-similarity parameter using the spectral period '
+                                     'T_(m-1,0) = T_p/1.1.'},
+                            {'tex': 'R_{u2\\%} = H_{m0}\\,(1.65\\,\\gamma_f\\,\\xi)',
+                             'desc': 'EurOtop (2018) breaking-wave 2% runup (eq 5.1), with '
+                                     'roughness factor gamma_f.'},
+                            {'tex': 'R_{u2\\%} = H_{m0}\\,\\gamma_f\\left(4 - '
+                                    '\\frac{1.5}{\\sqrt{\\xi}}\\right)',
+                             'desc': 'EurOtop (2018) surging-wave maximum cap (eq 5.2); '
+                                     'the smaller of this and the breaking value is '
+                                     'taken.'}]}],
+ 'symbols': [['W_50', 'Median armor-stone weight'],
+             ['w_r', 'Unit weight of armor rock'],
+             ['H_s', 'Significant wave height'],
+             ['N_s', 'Stability number (larger of CERC and van der Meer)'],
+             ['S_r', 'Stone specific gravity, w_r / w_water'],
+             ['theta', 'Structure slope angle; cot(theta) is the input'],
+             ['P', 'Permeability coefficient (0.1 impermeable core to 0.6 homogeneous)'],
+             ['S', 'van der Meer damage level'],
+             ['xi_z', 'Surf-similarity (Iribarren) parameter'],
+             ['H_m0',
+              'Energy-based zero-moment wave height (depth- or steepness-limited)']],
+ 'references': ['Hudson (1958)',
+                'Ahrens (1981)',
+                'van der Meer (1988)',
+                'van der Meer & Pilarczyk (1987)',
+                'Ahrens & Heimbaugh (1988)',
+                'Battjes (1974)',
+                'EM 1110-2-2300',
+                'EurOtop (2018)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Revetment armor/filter sizing and runup for SI inputs."""
     _validate(inp)

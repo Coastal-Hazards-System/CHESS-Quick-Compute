@@ -164,6 +164,62 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the wave-height modification factor and phase at a field point near '
+            'a fully-reflecting vertical wedge (a breakwater tip, corner, or semi-infinite '
+            'breakwater) where a monochromatic wave is simultaneously diffracted and '
+            'reflected, using the exact Chen (1987) eigenfunction wedge solution. Returns '
+            'the wavelength, modification factor, phase, and modified wave height.',
+ 'methods': [{'name': 'Chen (1987) eigenfunction wedge solution (PCDFRAC)',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': '\\omega^{2} = g k \\tanh(kh)',
+                             'desc': 'Linear dispersion relation fixing the wavenumber k '
+                                     '(and wavelength L = 2\\pi/k) from period and depth.'},
+                            {'tex': '\\nu = \\frac{\\theta_{0}}{\\pi}, \\quad \\theta_{0} '
+                                    '= 2\\pi - \\theta_{w}',
+                             'desc': 'Wedge parameter: theta_0 is the water-domain angle '
+                                     'and theta_w the solid wedge angle (theta_w = 0 gives '
+                                     'the semi-infinite breakwater, nu = 2).'},
+                            {'tex': '\\phi(r,\\theta) = \\frac{2}{\\nu}\\left[ J_{0}(kr) + '
+                                    '2\\sum_{n=1}^{\\infty} e^{i n \\pi / (2\\nu)} '
+                                    'J_{n/\\nu}(kr)\\cos\\frac{n\\alpha}{\\nu}\\cos\\frac{n\\theta}{\\nu} '
+                                    '\\right]',
+                             'desc': 'Complex horizontal-plane potential (eq 7): the exact '
+                                     'wedge eigenfunction series in fractional-order '
+                                     'Bessel functions, truncated when 8 successive terms '
+                                     'fall below 1e-6.'},
+                            {'tex': '|\\phi| = \\sqrt{(\\mathrm{Im}\\,\\phi)^{2} + '
+                                    '(\\mathrm{Re}\\,\\phi)^{2}}',
+                             'desc': 'Wave-height modification factor (= combined '
+                                     'diffraction/reflection coefficient, SPM 1984).'},
+                            {'tex': '\\beta = '
+                                    '\\tan^{-1}\\frac{\\mathrm{Im}\\,\\phi}{\\mathrm{Re}\\,\\phi}, '
+                                    '\\quad H = |\\phi|\\, H_{i}',
+                             'desc': 'Phase of the modified wave and the modified wave '
+                                     'height (modification factor times incident '
+                                     'height).'}]}],
+ 'symbols': [['phi', 'Complex horizontal-plane velocity potential at the field point'],
+             ['|phi|',
+              'Wave-height modification factor (diffraction/reflection coefficient)'],
+             ['beta', 'Phase of the modified wave (radians)'],
+             ['nu', 'Wedge parameter, nu = theta_0/pi'],
+             ['theta_0', 'Water-domain angle; solid wedge angle = 2*pi - theta_0'],
+             ['alpha', 'Incident wave angle'],
+             ['k', 'Wavenumber, k = 2*pi/L from linear dispersion'],
+             ['r, theta',
+              'Polar coordinates of the field point relative to the wedge apex'],
+             ['J_{n/nu}', 'Bessel function of the first kind of fractional order n/nu'],
+             ['H_i', 'Incident wave height; modified height H = |phi| H_i']],
+ 'references': ['Chen (1987), CERC-87-16 (PCDFRAC)',
+                'Stoker (1957)',
+                'Penny & Price (1952)',
+                'Wiegel (1962)',
+                'Kaihatu & Chen (1988)',
+                'SPM (1984)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Wedge diffraction/reflection at a point, for SI inputs."""
     _validate(inp)

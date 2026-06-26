@@ -215,6 +215,53 @@ def _validate(inp: dict) -> None:
 
 
 # --- compute (the single entry point both front-ends call) ----------------------
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes the full linear (Airy) wave-parameter table for a given '
+            'period/frequency and depth: wavelength, celerity, group velocity, shoaling '
+            'and pressure-response factors, energy and power, the Ursell number, and point '
+            'kinematics. It can either take wave height as input or invert a measured '
+            'dynamic-pressure amplitude to recover the height.',
+ 'methods': [{'name': 'Linear (Airy) wave parameters with shoaling and pressure response',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'c^{2} = \\frac{g}{k}\\tanh(kd)',
+                             'desc': 'Linear dispersion relation; solved explicitly via '
+                                     'the 9-term Hunt (1979) Pade form, then L = cT.'},
+                            {'tex': 'C_{g} = \\frac{c}{2}\\left[1 + '
+                                    '\\frac{2kd}{\\sinh(2kd)}\\right]',
+                             'desc': 'Group velocity; the bracketed factor over 2 is the '
+                                     'ratio n = C_g/c.'},
+                            {'tex': 'K_{s} = \\sqrt{\\frac{C_{g0}}{C_{g}}}',
+                             'desc': 'Shoaling coefficient H/H_0 from conservation of '
+                                     'energy flux (deepwater C_{g0} = c_0/2).'},
+                            {'tex': 'K_{p}(z) = \\frac{\\cosh(k(z+d))}{\\cosh(kd)}',
+                             'desc': 'Pressure-response (depth-attenuation) factor at '
+                                     'elevation z; at the bed it reduces to 1/cosh(kd).'},
+                            {'tex': 'H = \\frac{2\\,p_{d}}{\\rho\\,g\\,K_{p}(z)}',
+                             'desc': 'Invert mode: recover wave height from the measured '
+                                     'dynamic-pressure amplitude p_d at the gauge '
+                                     'elevation z.'}]}],
+ 'symbols': [['H', 'Wave height (= 2a)'],
+             ['T', 'Wave period (or input frequency f = 1/T)'],
+             ['d', 'Still-water depth'],
+             ['z',
+              'Vertical coordinate / gauge elevation from SWL, positive up (bed at -d)'],
+             ['k', 'Wave number, k = 2 pi / L'],
+             ['c', 'Phase celerity, c = L/T'],
+             ['C_g', 'Group velocity; n = C_g/c'],
+             ['K_s', 'Shoaling coefficient, H/H_0'],
+             ['K_p', 'Pressure response (depth attenuation) factor'],
+             ['p_d', 'Dynamic (wave-induced) pressure amplitude at z'],
+             ['rho', 'Water density (salt or fresh)'],
+             ['U_r', 'Ursell parameter, H L^2 / d^3']],
+ 'references': ['Airy (1845)',
+                'SPM (1984) App. C',
+                'Hunt (1979)',
+                'Dean & Dalrymple (1984)',
+                'Ursell (1953); Stokes (1847)']}
+
+
 def compute(inp: dict, *, g: float = G_SI, rho: Optional[float] = None,
             n_profile: int = 201) -> Result:
     """Wave-parameter results for SI inputs.

@@ -165,6 +165,80 @@ def _runup(slope_type, Hi, T, ds, cot_theta, a, b, g):
     return C * Hi
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Estimates the wave height transmitted past an impermeable coastal structure '
+            'as a transmission coefficient K_TO = H_T / H_i, for either a sloped structure '
+            'overtopped by waves or a vertical/composite (caisson-on-berm) structure. '
+            'Returns the runup, crest freeboard, transmission coefficient, and transmitted '
+            'wave height.',
+ 'method_key': 'transmission_method',
+ 'methods': [{'name': 'Seelig (ACES default)',
+              'when': 'Seelig',
+              'tag': 'legacy',
+              'note': "ACES default; reproduces User's Guide Examples 1-4 and is the only "
+                      'method available for vertical/composite structures.',
+              'equations': [{'tex': 'H_T = K_{TO}\\, H_i',
+                             'desc': 'Transmitted wave height from the overtopping '
+                                     'transmission coefficient (eq 1).'},
+                            {'tex': 'K_{TO} = C\\left(1 - \\frac{F}{R}\\right)',
+                             'desc': 'Sloped structure (Seelig 1980): F = h_s - d_s is '
+                                     'crest freeboard, R is the runup from the 5-2 '
+                                     'methods; clamped to [0,1] (eq 2).'},
+                            {'tex': 'C = 0.51 - 0.11\\,\\frac{B}{h_s}',
+                             'desc': 'Crest-width coefficient for the sloped overtopping '
+                                     'coefficient (eq 3).'},
+                            {'tex': 'K_{TO} = 0.5\\left[1 - '
+                                    '\\sin\\!\\left(\\frac{\\pi}{2\\alpha}\\left(\\frac{F}{H_i} '
+                                    '+ \\beta\\right)\\right)\\right]',
+                             'desc': 'Vertical/composite structure (Seelig 1976), '
+                                     'evaluated within the domain -(alpha+beta) < F/H_i < '
+                                     '(alpha-beta) (eqs 4 and Table 5-3-1).'},
+                            {'tex': '\\alpha = 1.8 + 0.4\\,\\mathrm{min}(B/d_s,\\,1)',
+                             'desc': 'Shape coefficient for the vertical/composite formula '
+                                     '(Table 5-3-2).'},
+                            {'tex': '\\beta = C_1\\,\\beta_1 + C_2\\,\\beta_2',
+                             'desc': 'Combined offset coefficient with C_1 = max(0, 1 - '
+                                     'B/d_s), C_2 = min(1, B/d_s) (eqs 6-7).'}]},
+             {'name': "d'Angremond, van der Meer & de Jong",
+              'when': "d'Angremond",
+              'tag': 'preferred',
+              'note': 'CEM VI-5-2 standard for sloped/low-crested structures; K_t bounded '
+                      'to [0.075, 0.8]. Selectable for sloped structures only.',
+              'equations': [{'tex': 'H_T = K_{TO}\\, H_i',
+                             'desc': 'Transmitted wave height from the transmission '
+                                     'coefficient.'},
+                            {'tex': 'K_{TO} = -0.4\\,\\frac{F}{H_i} + '
+                                    '0.64\\left(\\frac{B}{H_i}\\right)^{-0.31}\\left(1 - '
+                                    '\\exp(-0.5\\,\\xi)\\right)',
+                             'desc': "d'Angremond, van der Meer & de Jong (1996) "
+                                     'transmission coefficient for sloped/low-crested '
+                                     'structures.'},
+                            {'tex': '\\xi = \\frac{\\tan\\theta}{\\sqrt{H_i / L_0}}',
+                             'desc': 'Surf-similarity (Iribarren) parameter; theta is the '
+                                     'structure slope angle, L_0 = g T^2 / (2 pi) the '
+                                     'deepwater wavelength.'},
+                            {'tex': '0.075 \\leq K_{TO} \\leq 0.8',
+                             'desc': "Validity bounds applied to the d'Angremond "
+                                     'coefficient.'}]}],
+ 'symbols': [['K_{TO}', 'Wave transmission coefficient (= H_T / H_i)'],
+             ['H_T', 'Transmitted wave height behind the structure'],
+             ['H_i', 'Incident wave height'],
+             ['F', 'Crest freeboard, F = h_s - d_s (negative if submerged)'],
+             ['R', 'Wave runup (from the 5-2 runup methods)'],
+             ['C', 'Sloped-structure crest-width coefficient'],
+             ['B', 'Structure crest width'],
+             ['h_s', 'Structure height above the toe'],
+             ['d_s', 'Water depth at the structure toe'],
+             ['xi', 'Surf-similarity (Iribarren) parameter, tan(theta)/sqrt(H_i/L_0)']],
+ 'references': ['Seelig (1980)',
+                'Seelig (1976)',
+                'Ahrens & McCartney (1975)',
+                'Ahrens & Titus (1985)',
+                "d'Angremond, van der Meer & de Jong (1996)",
+                'Cross & Sollitt (1971)',
+                'CEM VI-5-2']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Transmitted wave height for SI inputs (see INPUTS)."""
     _validate(inp)

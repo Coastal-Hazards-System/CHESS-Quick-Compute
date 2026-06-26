@@ -170,6 +170,50 @@ def _validate(inp: dict) -> None:
             raise ValueError(f"{f.label} ({f.key}) = {v} outside [{f.lo}, {f.hi}] ({f.note})")
 
 
+# --- 'Method & equations' panel content (see chessqc_4_1 for the schema). ---
+ABOUT = {'summary': 'Computes solitary-wave kinematics and integral properties (celerity, surface '
+            'elevation, particle velocities, dynamic pressure, energy, McCowan-Munk M/N '
+            'coefficients, and flat-bed breaking height) for a wave of height H in '
+            'still-water depth d. Uses the classical McCowan-Munk solitary-wave theory as '
+            'given in the Coastal Engineering Manual.',
+ 'methods': [{'name': 'McCowan-Munk solitary-wave theory',
+              'when': None,
+              'tag': '',
+              'note': None,
+              'equations': [{'tex': 'C = \\sqrt{g\\,(d + H)}',
+                             'desc': 'Wave celerity (first-order McCowan); celerity ratio '
+                                     'C/\\sqrt{gd}=\\sqrt{1+H/d}.'},
+                            {'tex': '\\eta(x) = '
+                                    '\\frac{H}{\\cosh^2\\left[\\sqrt{\\frac{3H}{4 '
+                                    'd^3}}\\,(x - C t)\\right]}',
+                             'desc': 'Free-surface elevation above SWL (sech-squared crest '
+                                     'profile).'},
+                            {'tex': 'E = '
+                                    '\\frac{8}{3\\sqrt{3}}\\,\\rho\\,g\\,H^{3/2}\\,d^{3/2}',
+                             'desc': 'Total wave energy per unit crest width.'},
+                            {'tex': 'N = \\frac{2}{3}\\sin^2\\left[M\\left(1 + '
+                                    '\\frac{H}{d}\\right)\\right]',
+                             'desc': 'McCowan-Munk coefficient N, with H/d = '
+                                     '(N/M)\\tan[(M/2)(1+H/d)] solved jointly for M, N.'},
+                            {'tex': '\\frac{H_b}{d_b} = 0.78',
+                             'desc': 'McCowan (1894) breaking limit on a flat bed.'}]}],
+ 'symbols': [['H', 'Wave height (crest above still-water level)'],
+             ['d', 'Still-water depth'],
+             ['C', 'Wave celerity (speed of translation)'],
+             ['eta', 'Surface elevation above SWL at horizontal distance x'],
+             ['x', 'Horizontal distance from the crest'],
+             ['g', 'Gravitational acceleration'],
+             ['rho', 'Water density (salt or fresh)'],
+             ['E', 'Total wave energy per unit crest width'],
+             ['M, N', 'McCowan-Munk solitary-wave coefficients (functions of H/d)'],
+             ['H_b/d_b', 'Breaking height-to-depth ratio on a flat bed']],
+ 'references': ['McCowan (1891)',
+                'Munk (1949)',
+                'SPM (1984)',
+                'CEM (EM 1110-2-1100, Part II-1, eqs II-1-83 to II-1-89)',
+                'Zaroodny (1972)']}
+
+
 def compute(inp: dict, *, g: float = G_SI) -> Result:
     """Solitary-wave kinematics and integral properties for SI inputs."""
     _validate(inp)
