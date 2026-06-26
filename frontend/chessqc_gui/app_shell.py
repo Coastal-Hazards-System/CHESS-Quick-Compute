@@ -6,9 +6,11 @@ results right (value rows + Plot/Table tabs); SI/US unit toggle + example/reset.
 """
 from __future__ import annotations
 
+import html as _html
 import json
 import math
 import os
+import re
 
 import numpy as np
 
@@ -67,16 +69,19 @@ _GREEK = {"alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", 
           "phi", "chi", "psi", "omega"}
 
 
+_SYMTOK_RE = re.compile(r"^([A-Za-z]+)((?:[_^](?:[A-Za-z0-9']+|\*))*)$")
+_SUBSUP_RE = re.compile(r"([_^])([A-Za-z0-9']+|\*)")
+
+
 def _sym_tok(t: str) -> str:
-    base, sub = t, ""
-    u = t.find("_")
-    if u >= 0:
-        base, sub = t[:u], t[u + 1:]
-    if base.lower() in _GREEK:
-        base = "\\" + base
-    if sub == "":
-        return base
-    return base + "_" + ("{" + sub + "}" if len(sub) > 1 else sub)
+    """base + any run of _sub / ^sup groups -> LaTeX (e.g. 'H_rms^2' -> 'H_{rms}^2')."""
+    m = _SYMTOK_RE.match(t)
+    if not m:
+        return t
+    out = "\\" + m.group(1) if m.group(1).lower() in _GREEK else m.group(1)
+    for op, txt in _SUBSUP_RE.findall(m.group(2)):
+        out += op + ("{" + txt + "}" if len(txt) > 1 else txt)
+    return out
 
 
 def _sym_to_tex(s: str) -> str:
@@ -93,6 +98,48 @@ def _sym_to_tex(s: str) -> str:
         else:
             out.append(_sym_tok(toks[i])); i += 1
     return " ".join(out)
+
+
+# Greek names -> Unicode, for typesetting inline symbols in panel prose (descriptions,
+# notes) as Qt rich text (QLabel can't inline math pixmaps, but supports <sub> + Unicode).
+_GREEK_UNI = {
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ",
+    "epsilon": "ε", "zeta": "ζ", "eta": "η", "theta": "θ",
+    "iota": "ι", "kappa": "κ", "lambda": "λ", "mu": "μ",
+    "nu": "ν", "xi": "ξ", "pi": "π", "rho": "ρ", "sigma": "σ",
+    "tau": "τ", "upsilon": "υ", "phi": "φ", "chi": "χ",
+    "psi": "ψ", "omega": "ω", "Delta": "Δ", "Theta": "Θ",
+    "Lambda": "Λ", "Xi": "Ξ", "Pi": "Π", "Sigma": "Σ",
+    "Phi": "Φ", "Psi": "Ψ", "Omega": "Ω", "Gamma": "Γ",
+}
+# a token is "math" inside prose if it has a sub/superscript or is a Greek name
+_MATHTOK_RE = re.compile(
+    r"([A-Za-z]+(?:[_^](?:[A-Za-z0-9']+|\*))+|(?<![A-Za-z\\])(?:"
+    + "|".join(sorted(_GREEK_UNI, key=len, reverse=True))
+    + r")(?![A-Za-z]))")
+
+
+def _greek_uni(w: str) -> str:
+    return _GREEK_UNI.get(w) or _GREEK_UNI.get(w.lower())
+
+
+def _tok_html(tok: str) -> str:
+    """Symbol token -> Qt rich text: Greek base to Unicode, _sub/^sup to <sub>/<sup>."""
+    m = _SYMTOK_RE.match(tok)
+    if not m:
+        return _greek_uni(tok) or _html.escape(tok)
+    out = _greek_uni(m.group(1)) or _html.escape(m.group(1))
+    for op, txt in _SUBSUP_RE.findall(m.group(2)):
+        tag = "sub" if op == "_" else "sup"
+        out += f"<{tag}>{_html.escape(txt)}</{tag}>"
+    return out
+
+
+def _prose_html(text: str) -> str:
+    """Prose with inline symbols (e.g. 'elevation z_obs') -> Qt rich text: symbol tokens
+    typeset with <sub>/Unicode Greek, the rest escaped. Mirrors the web renderProse."""
+    parts = _MATHTOK_RE.split(str(text))
+    return "".join(_tok_html(p) if i % 2 else _html.escape(p) for i, p in enumerate(parts))
 
 _BIG = 1.0e9  # finite bound for "unrestricted" spin boxes
 # fidelity classification -> compact badge letter and QSS [badge="..."] style
@@ -389,7 +436,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         lay.setContentsMargins(16, 10, 16, 12)
         lay.setSpacing(8)
         if about.get("summary"):
-            s = QtWidgets.QLabel(about["summary"])
+            s = QtWidgets.QLabel(); s.setTextFormat(Qt.RichText)
+            s.setText(_prose_html(about["summary"]))
             s.setWordWrap(True)
             lay.addWidget(s)
         for m in about.get("methods", ()):
@@ -404,7 +452,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 head.setText(f"{m.get('name', '')}    [{tag}]")
             sv.addWidget(head)
             if m.get("note"):
-                n = QtWidgets.QLabel(m["note"]); n.setWordWrap(True)
+                n = QtWidgets.QLabel(); n.setTextFormat(Qt.RichText)
+                n.setText(_prose_html(m["note"])); n.setWordWrap(True)
                 n.setStyleSheet(f"color:{muted};")
                 sv.addWidget(n)
             for eq in m.get("equations", ()):
@@ -418,7 +467,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                     lbl.setText(eq.get("tex", ""))
                 row.addWidget(lbl)
                 if eq.get("desc"):
-                    d = QtWidgets.QLabel(eq["desc"])
+                    d = QtWidgets.QLabel(); d.setTextFormat(Qt.RichText)
+                    d.setText(_prose_html(eq["desc"]))
                     d.setStyleSheet(f"color:{muted};")
                     row.addWidget(d)
                 row.addStretch(1)
@@ -438,7 +488,8 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                     sy.setPixmap(pm)
                 else:
                     sy.setText(sym)
-                ds = QtWidgets.QLabel(desc); ds.setStyleSheet(f"color:{muted};")
+                ds = QtWidgets.QLabel(); ds.setTextFormat(Qt.RichText)
+                ds.setText(_prose_html(desc)); ds.setStyleSheet(f"color:{muted};")
                 grid.addWidget(sy, i, 0, Qt.AlignVCenter); grid.addWidget(ds, i, 1)
             grid.setColumnStretch(1, 1)
             lay.addLayout(grid)

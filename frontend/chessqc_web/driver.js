@@ -327,13 +327,14 @@ const _GREEK = new Set(["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "e
 
 // Turn an ABOUT symbol shorthand (e.g. "U_obs", "u_*", "phi", "Delta T", "bar t") into
 // LaTeX so it typesets with real subscripts/Greek. Both front-ends share this convention.
+// base + any run of _sub / ^sup groups (e.g. "H_rms^2", "ft^2", "u_*", "z_obs")
 function _symTok(t) {
-  let base = t, sub = "";
-  const u = t.indexOf("_");
-  if (u >= 0) { base = t.slice(0, u); sub = t.slice(u + 1); }
-  if (_GREEK.has(base.toLowerCase())) base = "\\" + base;
-  if (sub === "") return base;
-  return base + "_" + (sub.length > 1 ? "{" + sub + "}" : sub);
+  const m = /^([A-Za-z]+)((?:[_^](?:[A-Za-z0-9']+|\*))*)$/.exec(t);
+  if (!m) return t;                                  // not a clean symbol token
+  let out = _GREEK.has(m[1].toLowerCase()) ? "\\" + m[1] : m[1];
+  const re = /([_^])([A-Za-z0-9']+|\*)/g; let g;
+  while ((g = re.exec(m[2]))) out += g[1] + (g[2].length > 1 ? "{" + g[2] + "}" : g[2]);
+  return out;
 }
 function symToTex(s) {
   s = String(s).trim();
@@ -347,6 +348,28 @@ function symToTex(s) {
   return out.join(" ");
 }
 
+// Inline symbols inside prose (descriptions, notes): a token is "math" if it has an
+// underscore subscript (z_obs, u_*) or is a spelled-out Greek letter. Typeset just those,
+// leave the rest as text. Returns an HTML string (math via KaTeX renderToString).
+const _MATHTOK = new RegExp(
+  "([A-Za-z]+(?:[_^](?:[A-Za-z0-9']+|\\*))+|(?<![A-Za-z\\\\])(?:" +
+  [..._GREEK].join("|") + "|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|Gamma" +
+  ")(?![A-Za-z]))", "g");
+
+function renderProse(text) {
+  if (!text) return "";
+  const parts = String(text).split(_MATHTOK);
+  let html = "";
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 1 && window.katex) {
+      try { html += katex.renderToString(symToTex(parts[i]), { throwOnError: false }); continue; }
+      catch (e) { /* fall through */ }
+    }
+    html += _escHTML(parts[i]);
+  }
+  return html;
+}
+
 function renderMethodPanel() {
   const box = $("methodBox"), body = $("methodBody");
   if (!box || !body) return;
@@ -357,7 +380,7 @@ function renderMethodPanel() {
 
   if (about.summary) {
     const p = document.createElement("p"); p.className = "method-summary";
-    p.textContent = about.summary; body.appendChild(p);
+    p.innerHTML = renderProse(about.summary); body.appendChild(p);
   }
   for (const m of (about.methods || [])) {
     const sec = document.createElement("section");
@@ -367,11 +390,11 @@ function renderMethodPanel() {
     h.appendChild(nm);
     if (m.tag) { const t = document.createElement("span"); t.className = "chip chip-" + m.tag; t.textContent = m.tag; h.appendChild(t); }
     sec.appendChild(h);
-    if (m.note) { const n = document.createElement("p"); n.className = "method-note"; n.textContent = m.note; sec.appendChild(n); }
+    if (m.note) { const n = document.createElement("p"); n.className = "method-note"; n.innerHTML = renderProse(m.note); sec.appendChild(n); }
     for (const eq of (m.equations || [])) {
       const wrap = document.createElement("div"); wrap.className = "eq";
       const e = document.createElement("div"); e.className = "eq-tex"; renderTeX(eq.tex, e, true); wrap.appendChild(e);
-      if (eq.desc) { const d = document.createElement("span"); d.className = "eq-desc"; d.textContent = eq.desc; wrap.appendChild(d); }
+      if (eq.desc) { const d = document.createElement("span"); d.className = "eq-desc"; d.innerHTML = renderProse(eq.desc); wrap.appendChild(d); }
       sec.appendChild(wrap);
     }
     body.appendChild(sec);
@@ -380,7 +403,7 @@ function renderMethodPanel() {
     const dl = document.createElement("dl"); dl.className = "symbols";
     for (const [sym, desc] of about.symbols) {
       const dt = document.createElement("dt"); renderTeX(symToTex(sym), dt, false);
-      const dd = document.createElement("dd"); dd.textContent = desc;
+      const dd = document.createElement("dd"); dd.innerHTML = renderProse(desc);
       dl.append(dt, dd);
     }
     const cap = document.createElement("div"); cap.className = "method-subhead"; cap.textContent = "Symbols";
