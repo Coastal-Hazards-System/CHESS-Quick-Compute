@@ -26,11 +26,40 @@ _DATA_ROOT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "data")
 
+import io
+
 import matplotlib
 matplotlib.use("QtAgg")
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
+
+# LaTeX equation -> QPixmap via matplotlib mathtext (the same `tex` strings the web
+# front-end feeds to KaTeX). Cached by (tex, color, dpr); transparent background so it
+# sits on any themed panel. Returns None if mathtext can't parse the string.
+_MATH_CACHE: dict = {}
+
+
+def _latex_pixmap(tex: str, color: str, dpr: float = 2.0, fontsize: int = 13):
+    key = (tex, color, round(dpr, 2), fontsize)
+    if key in _MATH_CACHE:
+        return _MATH_CACHE[key]
+    fig = Figure(dpi=100.0 * dpr)
+    fig.patch.set_alpha(0.0)
+    FigureCanvasAgg(fig)
+    fig.text(0.0, 0.0, f"${tex}$", color=color, fontsize=fontsize)
+    buf = io.BytesIO()
+    try:
+        fig.savefig(buf, format="png", bbox_inches="tight", pad_inches=0.04, transparent=True)
+    except Exception:
+        _MATH_CACHE[key] = None
+        return None
+    pm = QtGui.QPixmap()
+    pm.loadFromData(buf.getvalue(), "PNG")
+    pm.setDevicePixelRatio(dpr)
+    _MATH_CACHE[key] = pm
+    return pm
 
 _BIG = 1.0e9  # finite bound for "unrestricted" spin boxes
 # fidelity classification -> compact badge letter and QSS [badge="..."] style
@@ -203,6 +232,12 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         split.setStretchFactor(0, 3)
         split.setStretchFactor(1, 1)
         split.setStretchFactor(2, 4)
+
+        # "Method & equations" panel (per-app ABOUT). Built after the splitter so the
+        # input widgets exist for active-method highlighting, but shown above it.
+        method_panel = self._build_method_panel()
+        if method_panel is not None:
+            outer.addWidget(method_panel)
         outer.addWidget(split, 1)
 
         self.status = self.statusBar()
@@ -251,6 +286,128 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 self._inputs_form.setRowVisible(w, vis)
             except (AttributeError, TypeError):
                 lbl.setVisible(vis); w.setVisible(vis)
+
+    # --- "Method & equations" panel ------------------------------------------------
+    def _build_method_panel(self):
+        about = getattr(self.app, "ABOUT", None)
+        if not about:
+            return None
+        self._about = about
+        self._method_sections = {}
+        container = QtWidgets.QWidget()
+        cv = QtWidgets.QVBoxLayout(container)
+        cv.setContentsMargins(0, 0, 0, 0)
+        cv.setSpacing(0)
+        self._method_toggle = QtWidgets.QToolButton()
+        self._method_toggle.setText("Method & equations")
+        self._method_toggle.setCheckable(True)
+        self._method_toggle.setChecked(False)
+        self._method_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self._method_toggle.setArrowType(Qt.RightArrow)
+        self._method_toggle.setAutoRaise(True)
+        f = self._method_toggle.font(); f.setBold(True); self._method_toggle.setFont(f)
+        self._method_toggle.toggled.connect(self._on_method_toggle)
+        cv.addWidget(self._method_toggle)
+        self._method_body = QtWidgets.QFrame()
+        self._method_body.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self._method_body.setVisible(False)
+        cv.addWidget(self._method_body)
+        self._populate_method_body()
+        # re-highlight the active formulation when the method-choice input changes
+        key = about.get("method_key")
+        if key and len(about.get("methods", ())) > 1:
+            w = self._widgets.get(key)
+            if isinstance(w, QtWidgets.QComboBox):
+                w.currentIndexChanged.connect(lambda *_: self._highlight_active_method())
+        return container
+
+    def _on_method_toggle(self, on: bool):
+        self._method_toggle.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
+        self._method_body.setVisible(on)
+
+    def _populate_method_body(self):
+        about = self._about
+        pal = get_plot_palette(settings.get_theme())
+        fg, muted = pal["fg"], pal["text"]
+        lay = QtWidgets.QVBoxLayout(self._method_body)
+        lay.setContentsMargins(16, 10, 16, 12)
+        lay.setSpacing(8)
+        if about.get("summary"):
+            s = QtWidgets.QLabel(about["summary"])
+            s.setWordWrap(True)
+            lay.addWidget(s)
+        for m in about.get("methods", ()):
+            sec = QtWidgets.QFrame()
+            sv = QtWidgets.QVBoxLayout(sec)
+            sv.setContentsMargins(0, 6, 0, 6)
+            sv.setSpacing(4)
+            head = QtWidgets.QLabel(m.get("name", ""))
+            hf = head.font(); hf.setBold(True); head.setFont(hf)
+            tag = m.get("tag")
+            if tag:
+                head.setText(f"{m.get('name', '')}    [{tag}]")
+            sv.addWidget(head)
+            if m.get("note"):
+                n = QtWidgets.QLabel(m["note"]); n.setWordWrap(True)
+                n.setStyleSheet(f"color:{muted};")
+                sv.addWidget(n)
+            for eq in m.get("equations", ()):
+                row = QtWidgets.QHBoxLayout()
+                row.setSpacing(12)
+                lbl = QtWidgets.QLabel()
+                pm = _latex_pixmap(eq.get("tex", ""), fg, self.devicePixelRatioF() or 2.0)
+                if pm is not None:
+                    lbl.setPixmap(pm)
+                else:
+                    lbl.setText(eq.get("tex", ""))
+                row.addWidget(lbl)
+                if eq.get("desc"):
+                    d = QtWidgets.QLabel(eq["desc"])
+                    d.setStyleSheet(f"color:{muted};")
+                    row.addWidget(d)
+                row.addStretch(1)
+                sv.addLayout(row)
+            lay.addWidget(sec)
+            self._method_sections[m.get("when", "")] = sec
+        if about.get("symbols"):
+            cap = QtWidgets.QLabel("Symbols")
+            cf = cap.font(); cf.setBold(True); cap.setFont(cf)
+            lay.addWidget(cap)
+            grid = QtWidgets.QGridLayout()
+            grid.setHorizontalSpacing(14); grid.setVerticalSpacing(2)
+            for i, (sym, desc) in enumerate(about["symbols"]):
+                sy = QtWidgets.QLabel(sym)
+                sy.setTextInteractionFlags(Qt.TextSelectableByMouse)
+                ds = QtWidgets.QLabel(desc); ds.setStyleSheet(f"color:{muted};")
+                grid.addWidget(sy, i, 0); grid.addWidget(ds, i, 1)
+            grid.setColumnStretch(1, 1)
+            lay.addLayout(grid)
+        if about.get("references"):
+            refs = QtWidgets.QLabel("References: " + "  ·  ".join(about["references"]))
+            refs.setWordWrap(True)
+            refs.setStyleSheet(f"color:{muted};")
+            lay.addWidget(refs)
+        self._highlight_active_method()
+
+    def _highlight_active_method(self):
+        about = getattr(self, "_about", None)
+        if not about:
+            return
+        key = about.get("method_key")
+        methods = about.get("methods", ())
+        single = (not key) or len(methods) < 2
+        active = None
+        if not single:
+            w = self._widgets.get(key)
+            if isinstance(w, QtWidgets.QComboBox):
+                active = w.currentText()
+        for when, sec in self._method_sections.items():
+            on = single or (when == str(active))
+            eff = sec.graphicsEffect()
+            if not isinstance(eff, QtWidgets.QGraphicsOpacityEffect):
+                eff = QtWidgets.QGraphicsOpacityEffect(sec)
+                sec.setGraphicsEffect(eff)
+            eff.setOpacity(1.0 if on else 0.4)
 
     def _build_center(self) -> QtWidgets.QWidget:
         w = QtWidgets.QWidget()

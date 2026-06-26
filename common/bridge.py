@@ -40,7 +40,9 @@ def contract(mod) -> str:
         d["choices"] = list(d.get("choices") or [])
         inputs.append(d)
     outputs = [dataclasses.asdict(o) for o in mod.OUTPUTS]
-    return json.dumps({"meta": meta, "inputs": inputs, "outputs": outputs})
+    # optional per-app "Method / Equations" panel content (plain dict; see app files)
+    about = getattr(mod, "ABOUT", None)
+    return json.dumps({"meta": meta, "inputs": inputs, "outputs": outputs, "about": about})
 
 
 def run(mod, inp_json: str) -> str:

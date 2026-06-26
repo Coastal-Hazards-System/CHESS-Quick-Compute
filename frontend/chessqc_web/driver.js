@@ -287,7 +287,87 @@ function buildForm() {
   }
   applyShowIf();
   buildWorkflowButtons();
+  renderMethodPanel();
   applyHandoff();
+}
+
+// --- "Method & equations" panel (per-app ABOUT, KaTeX-typeset) -------------------
+const _escHTML = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+function renderTeX(tex, el, display) {
+  if (window.katex) {
+    try { katex.render(tex, el, { displayMode: !!display, throwOnError: false }); return; }
+    catch (e) { /* fall through to plain text */ }
+  }
+  el.textContent = tex;   // KaTeX not yet loaded / failed: show the raw source
+}
+
+function renderMethodPanel() {
+  const box = $("methodBox"), body = $("methodBody");
+  if (!box || !body) return;
+  const about = contract.about;
+  if (!about) { box.style.display = "none"; return; }
+  box.style.display = "";
+  body.innerHTML = "";
+
+  if (about.summary) {
+    const p = document.createElement("p"); p.className = "method-summary";
+    p.textContent = about.summary; body.appendChild(p);
+  }
+  for (const m of (about.methods || [])) {
+    const sec = document.createElement("section");
+    sec.className = "method"; sec.dataset.when = m.when || "";
+    const h = document.createElement("div"); h.className = "method-head";
+    const nm = document.createElement("span"); nm.className = "method-name"; nm.textContent = m.name || "";
+    h.appendChild(nm);
+    if (m.tag) { const t = document.createElement("span"); t.className = "chip chip-" + m.tag; t.textContent = m.tag; h.appendChild(t); }
+    sec.appendChild(h);
+    if (m.note) { const n = document.createElement("p"); n.className = "method-note"; n.textContent = m.note; sec.appendChild(n); }
+    for (const eq of (m.equations || [])) {
+      const wrap = document.createElement("div"); wrap.className = "eq";
+      const e = document.createElement("div"); e.className = "eq-tex"; renderTeX(eq.tex, e, true); wrap.appendChild(e);
+      if (eq.desc) { const d = document.createElement("span"); d.className = "eq-desc"; d.textContent = eq.desc; wrap.appendChild(d); }
+      sec.appendChild(wrap);
+    }
+    body.appendChild(sec);
+  }
+  if (about.symbols && about.symbols.length) {
+    const dl = document.createElement("dl"); dl.className = "symbols";
+    for (const [sym, desc] of about.symbols) {
+      const dt = document.createElement("dt"); dt.textContent = sym;
+      const dd = document.createElement("dd"); dd.textContent = desc;
+      dl.append(dt, dd);
+    }
+    const cap = document.createElement("div"); cap.className = "method-subhead"; cap.textContent = "Symbols";
+    body.append(cap, dl);
+  }
+  if (about.references && about.references.length) {
+    const r = document.createElement("p"); r.className = "method-refs";
+    r.innerHTML = "<span class='method-subhead'>References</span> " + about.references.map(_escHTML).join(" · ");
+    body.appendChild(r);
+  }
+  highlightActiveMethod();
+}
+
+// Dim the methods that are not the currently-selected formulation (method_key choice).
+function highlightActiveMethod() {
+  const about = contract.about; if (!about) return;
+  const tagEl = $("methodTag"); if (tagEl) tagEl.textContent = "";
+  const key = about.method_key;
+  const single = !key || (about.methods || []).length < 2;
+  let active = null;
+  if (!single) {
+    const ctrl = document.querySelector(`[data-key="${key}"]`);
+    active = ctrl ? ctrl.value : null;
+  }
+  for (const sec of document.querySelectorAll("#methodBody .method")) {
+    const on = single || sec.dataset.when === String(active);
+    sec.classList.toggle("inactive", !on);
+    if (on && !single) {
+      const nm = sec.querySelector(".method-name");
+      if (nm && tagEl) tagEl.textContent = "· " + nm.textContent;
+    }
+  }
 }
 
 // --- area-10 workflow: "send to next app" buttons + in-memory series hand-off ---
@@ -857,7 +937,11 @@ document.addEventListener("DOMContentLoaded", () => {
   $("inputs").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); doCompute(); }
   });
-  $("inputs").addEventListener("change", applyShowIf);   // reactive show_if visibility
+  $("inputs").addEventListener("change", () => { applyShowIf(); highlightActiveMethod(); });
+  // KaTeX is deferred; if the panel painted before it loaded, re-typeset once it's ready.
+  window.addEventListener("load", () => {
+    if (typeof contract !== "undefined" && contract && contract.about) renderMethodPanel();
+  });
   // Browser back/forward switches the active app (history entries set in buildAppSelect).
   window.addEventListener("popstate", () => {
     const id = new URLSearchParams(location.search).get("app");

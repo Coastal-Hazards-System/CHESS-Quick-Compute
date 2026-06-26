@@ -6,9 +6,11 @@
   <title>CHESS-QC — Calculator</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
   <script src="_prefs.js"></script>
   <script src="theme.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <script src="apps.js"></script>
 </head>
 <body>
@@ -26,6 +28,11 @@
     </label>
     <button id="reset">Reset</button>
   </header>
+
+  <details id="methodBox" class="method-box" style="display:none">
+    <summary><span class="method-title">Method &amp; equations</span><span id="methodTag"></span></summary>
+    <div id="methodBody" class="method-body"></div>
+  </details>
 
   <main class="calc-main">
     <fieldset id="inputsBox"><legend>Inputs</legend><div id="inputs"></div></fieldset>

@@ -133,6 +133,70 @@ OUTPUTS = (
     Out("Ns",  "Stability number Hs/(d_n50)",     "",   "",     "scalar"),
 )
 
+# --- "Method / Equations" panel content (rendered on the tool page in both front-ends).
+# `method_key` names the choice input that selects the formulation; each method's `when`
+# matches that input's value so the active method is highlighted. Equation `tex` strings
+# stay in the KaTeX-intersect-matplotlib-mathtext subset so both renderers agree.
+ABOUT = {
+    "summary": (
+        "Sizes the primary armor units of a rubble-mound breakwater or revetment and "
+        "reports crest width, cover-layer thickness, and armor-unit placement density. "
+        "Choose the classic Hudson stability equation or the modern Van der Meer (1988) "
+        "rock-armor formulae."
+    ),
+    "method_key": "method",
+    "methods": [
+        {
+            "name": "Hudson (1953-61)",
+            "when": "Hudson",
+            "tag": "legacy",
+            "note": "Superseded for new USACE design, but retained to back-check legacy "
+                    "designs and prior analyses. Reproduces ACES User's Guide Example 4-1.",
+            "equations": [
+                {"tex": r"W = \frac{\gamma_r\,H^3}{K_D\,(S_r-1)^3\,\cot\theta}",
+                 "desc": "armor-unit weight"},
+                {"tex": r"B = 3\,k_\Delta\,(W/\gamma_r)^{1/3}",
+                 "desc": "crest width (minimum 3 units)"},
+                {"tex": r"r = n\,k_\Delta\,(W/\gamma_r)^{1/3}",
+                 "desc": "average cover-layer thickness (n layers)"},
+                {"tex": r"N_r = 1000\,n\,k_\Delta\,(1-P/100)\,(\gamma_r/W)^{2/3}",
+                 "desc": "armor units per 1000 ft^2"},
+            ],
+        },
+        {
+            "name": "Van der Meer (1988)",
+            "when": "Van der Meer",
+            "tag": "preferred",
+            "note": "Modern CIRIA Rock Manual standard; accounts for wave period, storm "
+                    "duration N, notional permeability P, and allowed damage level S.",
+            "equations": [
+                {"tex": r"\xi_m = \frac{\tan\alpha}{\sqrt{2\pi H / (g\,T_m^2)}}",
+                 "desc": "surf-similarity parameter (mean period)"},
+                {"tex": r"\frac{H}{\Delta D_{n50}} = 6.2\,P^{0.18}\,(S/\sqrt{N})^{0.2}\,\xi_m^{-0.5}",
+                 "desc": "plunging waves"},
+                {"tex": r"\frac{H}{\Delta D_{n50}} = P^{-0.13}\,(S/\sqrt{N})^{0.2}\,\sqrt{\cot\theta}\,\xi_m^{\,P}",
+                 "desc": "surging waves"},
+                {"tex": r"W = \gamma_r\,D_{n50}^{\,3}",
+                 "desc": "armor-unit weight from nominal diameter"},
+            ],
+        },
+    ],
+    "symbols": [
+        ["W", "armor-unit weight"],
+        ["H", "design wave height"],
+        ["K_D", "stability coefficient (SPM Table 7-8)"],
+        ["S_r", "specific gravity of armor = gamma_r / gamma_w"],
+        ["Delta", "relative buoyant density, S_r - 1"],
+        ["k_delta", "layer coefficient (SPM Table 7-13)"],
+        ["theta", "seaward structure slope angle (cot theta input)"],
+        ["D_n50", "nominal median armor diameter, (W/gamma_r)^(1/3)"],
+    ],
+    "references": [
+        "Hudson (1953-61)", "SPM (1984) Ch. 7", "EM 1110-2-2904",
+        "Van der Meer (1988)", "CIRIA/CUR Rock Manual (2007)",
+    ],
+}
+
 _N_CREST = 3      # ACES/SPM: crest width uses a minimum of 3 armor units
 
 

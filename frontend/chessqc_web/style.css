@@ -177,6 +177,37 @@ th { background: var(--header-bg); }
 
 #status { padding: 6px 16px; border-top: 1px solid var(--border); background: var(--header-bg); color: var(--label); }
 #status.err { color: var(--danger); }
+
+/* "Method & equations" panel (per-app ABOUT, KaTeX-typeset) */
+.method-box { margin: 12px 16px 0; border: var(--bw) solid var(--border); border-radius: var(--radius);
+  background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
+.method-box > summary { list-style: none; cursor: pointer; padding: 9px 14px; display: flex; align-items: center;
+  gap: 10px; background: var(--header-bg); color: var(--label); user-select: none; }
+.method-box > summary::-webkit-details-marker { display: none; }
+.method-box > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.method-box[open] > summary::before { transform: rotate(90deg); }
+.method-title { font-weight: 700; color: var(--accent);
+  text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-family: var(--label-font); }
+#methodTag { color: var(--muted); font-size: 13px; }
+.method-body { padding: 12px 16px 14px; }
+.method-summary { margin: 0 0 12px; color: var(--fg); max-width: 70ch; }
+.method-subhead { font-weight: 700; color: var(--label); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.method { padding: 10px 0; border-top: 1px solid var(--grid); }
+.method.inactive { opacity: .42; }
+.method-head { display: flex; align-items: center; gap: 8px; }
+.method-name { font-weight: 700; color: var(--fg); }
+.chip { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+.chip-preferred { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.chip-legacy { background: color-mix(in srgb, var(--muted) 22%, transparent); color: var(--muted); }
+.method-note { margin: 4px 0 8px; color: var(--muted); font-size: 13px; max-width: 70ch; }
+.eq { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin: 6px 0; }
+.eq-tex { overflow-x: auto; max-width: 100%; }
+.eq-desc { color: var(--muted); font-size: 12px; }
+dl.symbols { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 4px 0 0; }
+dl.symbols dt { font-family: var(--mono); color: var(--label); }
+dl.symbols dd { margin: 0; color: var(--muted); font-size: 13px; }
+.method-refs { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.method-refs .method-subhead { margin-right: 6px; }
 #overlay {
   position: fixed; inset: 0; background: var(--bg);
   display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--label);
