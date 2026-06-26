@@ -73,6 +73,7 @@ class Field:
     choices: tuple = ()
     columns: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
     show_if: tuple = ()        # (other_key, value): show this field only when inp[other_key] == value
 
 
@@ -128,9 +129,11 @@ INPUTS = (
                "center it on the record mean."),
     Field("ntde_start", "NTDE start year", "int", "yr", "yr", default=1983,
           lo=1800, hi=2100, note="National Tidal Datum Epoch start year (inclusive); "
-          "used only with the NTDE midpoint pivot"),
+          "used only with the NTDE midpoint pivot",
+          enable_if=("method", "NTDE midpoint (pivot)")),
     Field("ntde_end", "NTDE end year", "int", "yr", "yr", default=2001,
-          lo=1800, hi=2100, note="National Tidal Datum Epoch end year (inclusive)"),
+          lo=1800, hi=2100, note="National Tidal Datum Epoch end year (inclusive)",
+          enable_if=("method", "NTDE midpoint (pivot)")),
     Field("fit_mode", "Slope source", "choice", default="Fit (least squares)",
           choices=("Fit (least squares)", "Specified slope"),
           note="Fit the slope from the record, or apply a supplied slope."),

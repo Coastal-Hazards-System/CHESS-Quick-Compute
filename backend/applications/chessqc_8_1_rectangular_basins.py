@@ -63,6 +63,7 @@ class Field:
     hi: float = math.inf
     choices: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -97,7 +98,8 @@ INPUTS = (
     Field("lB", "Basin length", "float", "m", "ft", default=3000.0 * _FT, lo=1e-3, hi=1e6,
           note="length along the resonant (longitudinal) axis"),
     Field("lC", "Basin width", "float", "m", "ft", default=2000.0 * _FT, lo=1e-3, hi=1e6,
-          note="2-D only: transverse dimension"),
+          note="2-D only: transverse dimension",
+          enable_if=("basin_type", "Closed 2-D (rectangular)")),
     Field("d", "Water depth", "float", "m", "ft", default=30.0 * _FT, lo=1e-3, hi=1e4,
           note="mean basin depth; resonance uses shallow-water c = sqrt(g d)"),
     Field("H", "Standing-wave height", "float", "m", "ft", default=1.0 * _FT, lo=0.0, hi=1e3,
@@ -105,17 +107,22 @@ INPUTS = (
     Field("n", "Longitudinal mode n", "int", "", "", default=1, lo=0, hi=50,
           note="closed/2-D: n>=1; open: n>=0 (n=0 is the fundamental)"),
     Field("m_mode", "Transverse mode m", "int", "", "", default=1, lo=0, hi=50,
-          note="2-D only: m>=0 (m=0 reduces to the 1-D longitudinal mode)"),
+          note="2-D only: m>=0 (m=0 reduces to the 1-D longitudinal mode)",
+          enable_if=("basin_type", "Closed 2-D (rectangular)")),
     # Helmholtz-only geometry
     Field("Ab", "Basin surface area", "float", "m^2", "ft^2", default=3000.0 * 2000.0 * _FT * _FT,
-          lo=1e-3, hi=1e12, note="Helmholtz only: plan area of the basin"),
+          lo=1e-3, hi=1e12, note="Helmholtz only: plan area of the basin",
+          enable_if=("basin_type", "Helmholtz (basin + channel)")),
     Field("Ac", "Channel cross-section area", "float", "m^2", "ft^2",
           default=200.0 * 30.0 * _FT * _FT, lo=1e-3, hi=1e10,
-          note="Helmholtz only: flow area of the entrance channel"),
+          note="Helmholtz only: flow area of the entrance channel",
+          enable_if=("basin_type", "Helmholtz (basin + channel)")),
     Field("L_ch", "Channel length", "float", "m", "ft", default=500.0 * _FT, lo=0.0, hi=1e5,
-          note="Helmholtz only: length of the entrance channel"),
+          note="Helmholtz only: length of the entrance channel",
+          enable_if=("basin_type", "Helmholtz (basin + channel)")),
     Field("L_corr", "Mouth length correction", "float", "m", "ft", default=100.0 * _FT,
-          lo=0.0, hi=1e5, note="Helmholtz only: added-mass correction at the mouth"),
+          lo=0.0, hi=1e5, note="Helmholtz only: added-mass correction at the mouth",
+          enable_if=("basin_type", "Helmholtz (basin + channel)")),
 )
 
 OUTPUTS = (

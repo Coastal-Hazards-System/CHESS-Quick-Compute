@@ -286,9 +286,27 @@ function buildForm() {
     box.appendChild(row);
   }
   applyShowIf();
+  applyEnableIf();
   buildWorkflowButtons();
   renderMethodPanel();
   applyHandoff();
+}
+
+// Gray out (disable) inputs whose `enable_if: [otherKey, value]` is not currently met
+// — e.g. the Van der Meer parameters when the Hudson method is selected. Unlike show_if,
+// the field stays visible so the user sees it exists but isn't used by this method.
+function applyEnableIf() {
+  for (const fld of contract.inputs) {
+    const cond = fld.enable_if;
+    if (!cond || !cond.length) continue;
+    const ctrl = document.querySelector(`[data-key="${cond[0]}"]`);
+    const cur = ctrl ? (ctrl.type === "checkbox" ? ctrl.checked : ctrl.value) : undefined;
+    const on = String(cur) === String(cond[1]);
+    const wrap = document.querySelector(`[data-fieldwrap="${fld.key}"]`);
+    if (wrap) wrap.classList.toggle("disabled", !on);
+    const own = document.querySelector(`[data-key="${fld.key}"]`);
+    if (own && "disabled" in own) own.disabled = !on;
+  }
 }
 
 // --- "Method & equations" panel (per-app ABOUT, KaTeX-typeset) -------------------
@@ -937,7 +955,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("inputs").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); doCompute(); }
   });
-  $("inputs").addEventListener("change", () => { applyShowIf(); highlightActiveMethod(); });
+  $("inputs").addEventListener("change", () => { applyShowIf(); applyEnableIf(); highlightActiveMethod(); });
   // KaTeX is deferred; if the panel painted before it loaded, re-typeset once it's ready.
   window.addEventListener("load", () => {
     if (typeof contract !== "undefined" && contract && contract.about) renderMethodPanel();

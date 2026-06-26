@@ -256,15 +256,38 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             lbl.setToolTip(f.note or "")
             form.addRow(lbl, w)
             self._input_rows[f.key] = (lbl, w)
-        # reactive show_if: re-evaluate visibility when a controlling input changes
-        for k in {c[0] for f in self.inputs if (c := getattr(f, "show_if", ()))}:
+        # reactive show_if / enable_if: re-evaluate when a controlling input changes
+        controllers = {c[0] for f in self.inputs if (c := getattr(f, "show_if", ()))}
+        controllers |= {c[0] for f in self.inputs if (c := getattr(f, "enable_if", ()))}
+        for k in controllers:
             cw = self._widgets.get(k)
             if isinstance(cw, QtWidgets.QComboBox):
-                cw.currentIndexChanged.connect(lambda *_: self._apply_show_if())
+                cw.currentIndexChanged.connect(lambda *_: (self._apply_show_if(), self._apply_enable_if()))
             elif isinstance(cw, QtWidgets.QCheckBox):
-                cw.toggled.connect(lambda *_: self._apply_show_if())
+                cw.toggled.connect(lambda *_: (self._apply_show_if(), self._apply_enable_if()))
         self._apply_show_if()
+        self._apply_enable_if()
         return box
+
+    def _apply_enable_if(self):
+        """Gray out (disable) inputs whose `enable_if = (other_key, value)` is not met
+        (e.g. the Van der Meer parameters while the Hudson method is selected). The row
+        stays visible, unlike show_if, so the user sees it exists but isn't used."""
+        for f in self.inputs:
+            cond = getattr(f, "enable_if", ())
+            if not cond:
+                continue
+            cw = self._widgets.get(cond[0])
+            if isinstance(cw, QtWidgets.QComboBox):
+                cur = cw.currentText()
+            elif isinstance(cw, QtWidgets.QCheckBox):
+                cur = cw.isChecked()
+            else:
+                cur = None
+            on = str(cur) == str(cond[1])
+            lbl, w = self._input_rows[f.key]
+            w.setEnabled(on)
+            lbl.setEnabled(on)
 
     def _apply_show_if(self):
         """Hide inputs whose `show_if = (other_key, value)` condition is not met

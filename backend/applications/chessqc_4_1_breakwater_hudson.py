@@ -61,6 +61,7 @@ class Field:
     hi: float = math.inf
     choices: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -104,7 +105,8 @@ INPUTS = (
     Field("w_w", "Water unit weight", "float", "kN/m^3", "lb/ft^3", default=64.0 * _LBF_PER_FT3,
           lo=1.0, hi=1e6, note="64 lb/ft^3 seawater, 62.4 lb/ft^3 fresh"),
     Field("K_D", "Stability coefficient", "float", "", "", default=10.0, lo=1e-3, hi=1e4,
-          note="K_D from SPM Table 7-8 (depends on armor type / slope / wave condition)"),
+          note="K_D from SPM Table 7-8 (depends on armor type / slope / wave condition)",
+          enable_if=("method", "Hudson")),
     Field("k_delta", "Layer coefficient", "float", "", "", default=1.02, lo=1e-3, hi=10.0,
           note="layer coefficient k_delta (SPM Table 7-13)"),
     Field("P", "Average porosity of armor layer", "float", "%", "%", default=54.0, lo=0.0, hi=99.0,
@@ -115,13 +117,17 @@ INPUTS = (
           note="number of armor-unit layers (>= 2 typical)"),
     # --- Van der Meer (1988) parameters (used only when method = Van der Meer) ---
     Field("Tm", "Mean wave period (Van der Meer)", "float", "s", "s", default=8.0, lo=1e-2, hi=1e3,
-          note="Van der Meer only: mean period T_m for the surf-similarity parameter"),
+          note="Van der Meer only: mean period T_m for the surf-similarity parameter",
+          enable_if=("method", "Van der Meer")),
     Field("N_waves", "Number of waves (Van der Meer)", "int", "", "", default=7500, lo=1, hi=1000000,
-          note="Van der Meer only: storm duration in waves (typ. <= 7500)"),
+          note="Van der Meer only: storm duration in waves (typ. <= 7500)",
+          enable_if=("method", "Van der Meer")),
     Field("perm", "Notional permeability P (Van der Meer)", "float", "", "", default=0.4, lo=0.1, hi=0.6,
-          note="Van der Meer only: 0.1 impermeable core ... 0.5-0.6 homogeneous mound"),
+          note="Van der Meer only: 0.1 impermeable core ... 0.5-0.6 homogeneous mound",
+          enable_if=("method", "Van der Meer")),
     Field("S_damage", "Damage level S (Van der Meer)", "float", "", "", default=2.0, lo=1.0, hi=30.0,
-          note="Van der Meer only: 2 = start of damage; higher = more allowed damage"),
+          note="Van der Meer only: 2 = start of damage; higher = more allowed damage",
+          enable_if=("method", "Van der Meer")),
 )
 
 # Complete output list (ACES User's Guide 4-1).

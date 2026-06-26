@@ -85,6 +85,7 @@ class Field:
     choices: tuple = ()
     columns: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -143,7 +144,8 @@ INPUTS = (
     Field("F", "Wind fetch length", "float", "km", "mi", default=26.0 * _MI,
           lo=1e-3, hi=5e6, note="open water: single fetch length"),
     Field("d", "Average fetch depth", "float", "m", "ft", default=13.0 * _FT,
-          lo=0.1 * _FT, hi=1e4, note="> 0 (used for shallow water)"),
+          lo=0.1 * _FT, hi=1e4, note="> 0 (used for shallow water)",
+          enable_if=("wave_eq", "Shallow")),
     # restricted-fetch geometry (used only when fetch_type = Restricted)
     Field("wind_dir", "Wind direction", "angle", "deg", "deg", default=125.0, lo=0.0, hi=360.0,
           note="restricted: deg clockwise from north"),

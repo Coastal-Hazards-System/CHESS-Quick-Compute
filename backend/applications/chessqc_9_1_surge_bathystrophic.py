@@ -65,6 +65,7 @@ class Field:
     key: str; label: str; kind: str = "float"; unit_si: str = ""; unit_us: str = ""
     default: object = 0.0; lo: float = -math.inf; hi: float = math.inf
     choices: tuple = (); columns: tuple = (); note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -113,9 +114,11 @@ INPUTS = (
     Field("wind_model", "Wind model", "choice", "", "", default="Holland (1980)",
           choices=_WIND_MODELS, note="Holland (B adjustable) or Myers/Bodine (B=1)"),
     Field("B_holland", "Holland B (peakedness)", "float", "", "", default=1.5,
-          lo=0.5, hi=2.5, note="Holland shape factor; locked to 1.0 for Myers/Bodine"),
+          lo=0.5, hi=2.5, note="Holland shape factor; locked to 1.0 for Myers/Bodine",
+          enable_if=("wind_model", "Holland (1980)")),
     Field("Vmax", "Max wind (optional)", "float", "km/h", "mph", default=0.0,
-          lo=0.0, hi=120.0, note="if > 0, overrides B via B = rho_a e Vmax^2 / dP"),
+          lo=0.0, hi=120.0, note="if > 0, overrides B via B = rho_a e Vmax^2 / dP",
+          enable_if=("wind_model", "Holland (1980)")),
     Field("rho_air", "Air density", "float", "kg/m^3", "kg/m^3", default=RHO_AIR,
           lo=1.0, hi=1.3, note="ambient air density"),
     Field("K_bottom", "Bottom friction coefficient", "float", "", "", default=0.0025,

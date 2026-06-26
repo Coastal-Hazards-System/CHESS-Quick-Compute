@@ -82,6 +82,7 @@ class Field:
     hi: float = math.inf
     choices: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -116,10 +117,14 @@ INPUTS = (
                "Zanuttigh-van der Meer 2008 reflection (empirical; ignores the layer geometry)"),
     # material + layer geometry are passed as lists to compute(); see _DEFAULT_GEOM
     Field("d50", "Material median diameters (list)", "list", "m", "ft", default=None,
-          note="armor, underlayer, core, ... (one per material)"),
-    Field("porosity", "Material porosities (list)", "list", "", "", default=None),
-    Field("TH", "Layer thicknesses (list, bottom->top)", "list", "m", "ft", default=None),
-    Field("LL", "Material length per layer LL[material][layer]", "matrix", "m", "ft", default=None),
+          note="armor, underlayer, core, ... (one per material)",
+          enable_if=("method", "Madsen-White")),
+    Field("porosity", "Material porosities (list)", "list", "", "", default=None,
+          enable_if=("method", "Madsen-White")),
+    Field("TH", "Layer thicknesses (list, bottom->top)", "list", "m", "ft", default=None,
+          enable_if=("method", "Madsen-White")),
+    Field("LL", "Material length per layer LL[material][layer]", "matrix", "m", "ft", default=None,
+          enable_if=("method", "Madsen-White")),
 )
 
 OUTPUTS = (

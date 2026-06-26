@@ -139,6 +139,9 @@ legend { font-weight: 600; color: var(--label); padding: 0 4px;
 .row label { color: var(--label); text-align: right;
   text-transform: var(--label-transform); letter-spacing: var(--label-spacing); font-family: var(--label-font); }
 .row .unit { color: var(--muted); }
+/* enable_if: input not used by the active method/formulation — visible but grayed */
+.row.disabled { opacity: .4; }
+.row.disabled input, .row.disabled select { cursor: not-allowed; }
 
 .results .vrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 3px 0; }
 .results .vrow span:first-child { color: var(--label);

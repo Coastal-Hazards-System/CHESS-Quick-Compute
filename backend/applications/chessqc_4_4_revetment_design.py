@@ -70,6 +70,7 @@ class Field:
     hi: float = math.inf
     choices: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -106,7 +107,8 @@ INPUTS = (
           choices=("Ahrens-Heimbaugh", "EurOtop"),
           note="Ahrens & Heimbaugh 1988 (ACES) or EurOtop 2018 Ru2% (modern standard)"),
     Field("gamma_f", "Roughness factor (EurOtop)", "float", "", "", default=0.55, lo=0.3, hi=1.0,
-          note="EurOtop only: ~0.40 permeable rock, 0.55 impermeable rock, 1.0 smooth"),
+          note="EurOtop only: ~0.40 permeable rock, 0.55 impermeable rock, 1.0 smooth",
+          enable_if=("runup_method", "EurOtop")),
 )
 
 OUTPUTS = (

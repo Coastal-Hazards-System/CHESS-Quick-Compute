@@ -73,6 +73,7 @@ class Field:
     hi: float = math.inf
     choices: tuple = ()
     note: str = ""
+    enable_if: tuple = ()    # (other_key, value): gray out (disable) unless that input == value
 
 
 @dataclass(frozen=True)
@@ -115,10 +116,12 @@ INPUTS = (
           note="Ahrens & McCartney; per armor type (Appendix A)"),
     Field("b", "Rough-slope coefficient b", "float", "", "", default=0.398, lo=0.0, hi=10.0),
     Field("alpha", "Overtopping coefficient alpha", "float", "", "", default=0.076463,
-          lo=1e-4, hi=1.0, note="SPM figures; or set alpha_from_slope"),
+          lo=1e-4, hi=1.0, note="SPM figures; or set alpha_from_slope",
+          enable_if=("overtopping_method", "Weggel")),
     Field("Qstar0", "Overtopping coefficient Q*0", "float", "", "", default=0.025,
-          lo=0.0, hi=10.0),
-    Field("alpha_from_slope", "Use alpha = 0.06 - 0.01431 sin(theta)", "bool", default=False),
+          lo=0.0, hi=10.0, enable_if=("overtopping_method", "Weggel")),
+    Field("alpha_from_slope", "Use alpha = 0.06 - 0.01431 sin(theta)", "bool", default=False,
+          enable_if=("overtopping_method", "Weggel")),
     Field("U", "Onshore wind velocity", "float", "km/h", "kt", default=35.0 * _KN,
           lo=0.0, hi=200.0, note="0 = no wind correction"),
     Field("KR", "Refraction coefficient", "float", "", "", default=1.0, lo=0.0, hi=1.0,
@@ -127,7 +130,8 @@ INPUTS = (
           choices=("Weggel", "EurOtop"),
           note="Weggel 1976 (ACES) or EurOtop 2018 mean discharge (modern standard)"),
     Field("gamma_f", "Roughness factor (EurOtop)", "float", "", "", default=0.55, lo=0.3, hi=1.0,
-          note="EurOtop only: ~0.55 rough rock, 1.0 smooth"),
+          note="EurOtop only: ~0.55 rough rock, 1.0 smooth",
+          enable_if=("overtopping_method", "EurOtop")),
 )
 
 OUTPUTS = (
