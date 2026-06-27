@@ -69,8 +69,13 @@ _GREEK = {"alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", 
           "phi", "chi", "psi", "omega"}
 
 
-_SYMTOK_RE = re.compile(r"^([A-Za-z]+)((?:[_^](?:[A-Za-z0-9']+|\*))*)$")
-_SUBSUP_RE = re.compile(r"([_^])([A-Za-z0-9']+|\*)")
+# sub/sup token grammar (mirrors the web driver): subscripts allow a digit fraction (R_1/3)
+# and % (R_2%); superscripts are exponents only (so unit "m^3/s" keeps the "/s" outside).
+_SUBC = r"(?:\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)"
+_SUPC = r"(?:\d+\.\d+|[A-Za-z0-9']+|\*)"
+_SSGRP = rf"(?:_{_SUBC}|\^{_SUPC})"
+_SYMTOK_RE = re.compile(rf"^([A-Za-z]+)((?:{_SSGRP})*)$")
+_SUBSUP_RE = re.compile(r"([_^])(\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)")
 
 
 def _sym_tok(t: str) -> str:
@@ -80,6 +85,7 @@ def _sym_tok(t: str) -> str:
         return t
     out = "\\" + m.group(1) if m.group(1).lower() in _GREEK else m.group(1)
     for op, txt in _SUBSUP_RE.findall(m.group(2)):
+        txt = txt.replace("%", r"\%")          # % is a LaTeX comment char (mathtext/KaTeX)
         out += op + ("{" + txt + "}" if len(txt) > 1 else txt)
     return out
 
@@ -114,7 +120,7 @@ _GREEK_UNI = {
 }
 # a token is "math" inside prose if it has a sub/superscript or is a Greek name
 _MATHTOK_RE = re.compile(
-    r"([A-Za-z]+(?:[_^](?:[A-Za-z0-9']+|\*))+|(?<![A-Za-z\\])(?:"
+    rf"([A-Za-z]+(?:{_SSGRP})+|(?<![A-Za-z\\])(?:"
     + "|".join(sorted(_GREEK_UNI, key=len, reverse=True))
     + r")(?![A-Za-z]))")
 
@@ -140,6 +146,21 @@ def _prose_html(text: str) -> str:
     typeset with <sub>/Unicode Greek, the rest escaped. Mirrors the web renderProse."""
     parts = _MATHTOK_RE.split(str(text))
     return "".join(_tok_html(p) if i % 2 else _html.escape(p) for i, p in enumerate(parts))
+
+
+_SUP_MAP = str.maketrans("0123456789+-n", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ⁿ")
+_SUB_MAP = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+
+
+def _unit_plain(u: str) -> str:
+    """Plain-text (non-HTML) unit typesetting for spinbox suffixes, which can't hold rich
+    text: kN/m^3 -> kN/m³, ft^2 -> ft², x_2 -> x subscript 2."""
+    if not u:
+        return u
+    u = re.sub(r"\^([0-9+\-n]+)", lambda m: m.group(1).translate(_SUP_MAP), u)
+    u = re.sub(r"_([0-9]+)", lambda m: m.group(1).translate(_SUB_MAP), u)
+    return u
+
 
 _BIG = 1.0e9  # finite bound for "unrestricted" spin boxes
 # fidelity classification -> compact badge letter and QSS [badge="..."] style
@@ -250,7 +271,9 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         """Field-name label styled per the active vibe (Forge: uppercase mono, spaced)."""
         if self._vibe_opts["label_upper"]:
             text = text.upper()
-        lbl = QtWidgets.QLabel(text)
+        lbl = QtWidgets.QLabel()
+        lbl.setTextFormat(Qt.RichText)
+        lbl.setText(_prose_html(text))    # typeset ^/_ subscripts (ft^2, d_n50) + Greek
         lbl.setObjectName("fieldLabel")
         if self._vibe_opts["mono_labels"]:
             f = lbl.font()
@@ -321,6 +344,11 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         outer.addWidget(split, 1)
 
         self.status = self.statusBar()
+        # a rich-text label so the ribbon can typeset symbols (K_D=..., S_r=...)
+        self._status_label = QtWidgets.QLabel()
+        self._status_label.setTextFormat(Qt.RichText)
+        self._status_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.status.addWidget(self._status_label, 1)
         self._set_status("ready", ok=True)
 
     def _build_inputs_box(self) -> QtWidgets.QGroupBox:
@@ -334,6 +362,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             self._widgets[f.key] = w
             lbl = self._field_label(f.label)
             lbl.setToolTip(f.note or "")
+            w.setToolTip(f.note or "")        # hover the input itself, not just its label
             form.addRow(lbl, w)
             self._input_rows[f.key] = (lbl, w)
         # reactive show_if / enable_if: re-evaluate when a controlling input changes
@@ -402,7 +431,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         cv.setContentsMargins(0, 0, 0, 0)
         cv.setSpacing(0)
         self._method_toggle = QtWidgets.QToolButton()
-        self._method_toggle.setText("Method & equations")
+        self._method_toggle.setText("Method & Equations")
         self._method_toggle.setCheckable(True)
         self._method_toggle.setChecked(False)
         self._method_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -410,7 +439,17 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         self._method_toggle.setAutoRaise(True)
         f = self._method_toggle.font(); f.setBold(True); self._method_toggle.setFont(f)
         self._method_toggle.toggled.connect(self._on_method_toggle)
-        cv.addWidget(self._method_toggle)
+        header = QtWidgets.QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.addWidget(self._method_toggle)
+        header.addStretch(1)
+        pop = QtWidgets.QToolButton()
+        pop.setText("Pop out ⤢")
+        pop.setAutoRaise(True)
+        pop.setToolTip("Open Method & Equations in a separate window")
+        pop.clicked.connect(self._pop_out_method)
+        header.addWidget(pop)
+        cv.addLayout(header)
         self._method_body = QtWidgets.QFrame()
         self._method_body.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self._method_body.setVisible(False)
@@ -428,11 +467,31 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         self._method_toggle.setArrowType(Qt.DownArrow if on else Qt.RightArrow)
         self._method_body.setVisible(on)
 
-    def _populate_method_body(self):
+    def _pop_out_method(self):
+        """Open the Method & Equations panel in its own resizable, scrollable window."""
+        dlg = QtWidgets.QDialog(self)
+        dlg.setWindowTitle(f"CHESS-QC {self.meta.aces_id} — Method & Equations")
+        dlg.resize(900, 720)
+        v = QtWidgets.QVBoxLayout(dlg)
+        v.setContentsMargins(0, 0, 0, 0)
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        content = QtWidgets.QWidget()
+        self._populate_method_body(content, {})    # fresh copy, its own sections dict
+        scroll.setWidget(content)
+        v.addWidget(scroll)
+        dlg.show()
+
+    def _populate_method_body(self, body=None, secs=None):
         about = self._about
+        if body is None:
+            body = self._method_body
+        if secs is None:
+            secs = self._method_sections
         pal = get_plot_palette(settings.get_theme())
         fg, muted = pal["fg"], pal["text"]
-        lay = QtWidgets.QVBoxLayout(self._method_body)
+        lay = QtWidgets.QVBoxLayout(body)
         lay.setContentsMargins(16, 10, 16, 12)
         lay.setSpacing(8)
         if about.get("summary"):
@@ -474,7 +533,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
                 row.addStretch(1)
                 sv.addLayout(row)
             lay.addWidget(sec)
-            self._method_sections[m.get("when", "")] = sec
+            secs[m.get("when", "")] = sec
         if about.get("symbols"):
             cap = QtWidgets.QLabel("Symbols")
             cf = cap.font(); cf.setBold(True); cap.setFont(cf)
@@ -498,12 +557,13 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             refs.setWordWrap(True)
             refs.setStyleSheet(f"color:{muted};")
             lay.addWidget(refs)
-        self._highlight_active_method()
+        self._highlight_active_method(secs)
 
-    def _highlight_active_method(self):
+    def _highlight_active_method(self, sections=None):
         about = getattr(self, "_about", None)
         if not about:
             return
+        secs = self._method_sections if sections is None else sections
         key = about.get("method_key")
         methods = about.get("methods", ())
         single = (not key) or len(methods) < 2
@@ -512,7 +572,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             w = self._widgets.get(key)
             if isinstance(w, QtWidgets.QComboBox):
                 active = w.currentText()
-        for when, sec in self._method_sections.items():
+        for when, sec in secs.items():
             on = single or (when == str(active))
             eff = sec.graphicsEffect()
             if not isinstance(eff, QtWidgets.QGraphicsOpacityEffect):
@@ -546,6 +606,9 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             lab.setTextInteractionFlags(Qt.TextSelectableByMouse)
             self._value_labels[o.key] = lab
             name = self._field_label(o.label)
+            note = getattr(o, "note", "") or ""
+            if note:
+                name.setToolTip(note); lab.setToolTip(note)
             self._rows_form.addRow(name, lab)
         v.addWidget(rows)
         # area-10 workflow: "send to next app" buttons (carry the series forward)
@@ -632,7 +695,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         sb.setRange(min(lo, hi), max(lo, hi))
         sb.setValue(units.from_si(float(f.default), unit))
         if unit:
-            sb.setSuffix(f" {unit}")
+            sb.setSuffix(f" {_unit_plain(unit)}")
         sb.setSingleStep(0.1 if dec <= 2 else 10 ** -(dec - 1))
         return sb
 
@@ -824,9 +887,9 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             val_si = getattr(r, o.key, None)
             if val_si is None:
                 continue
-            u = self._out_unit(o)
+            u = _unit_plain(self._out_unit(o))
             try:                                   # numeric -> convert to display units + format
-                txt = f"{self._fmt(units.from_si(float(val_si), u))} {u}".rstrip()
+                txt = f"{self._fmt(units.from_si(float(val_si), self._out_unit(o)))} {u}".rstrip()
             except (TypeError, ValueError):        # string/sentinel output (e.g. a regime label) -> show as-is
                 txt = f"{val_si} {u}".rstrip() if u else str(val_si)
             self._value_labels[o.key].setText(txt)
@@ -1095,7 +1158,7 @@ class CalculatorWindow(QtWidgets.QMainWindow):
             lo = units.from_si(_clamp_bound(f.lo), new_u)
             hi = units.from_si(_clamp_bound(f.hi), new_u)
             w.setRange(min(lo, hi), max(lo, hi))
-            w.setSuffix(f" {new_u}" if new_u else "")
+            w.setSuffix(f" {_unit_plain(new_u)}" if new_u else "")
             w.setValue(units.from_si(si_val, new_u))
             w.blockSignals(False)
         self.system = new
@@ -1205,5 +1268,5 @@ class CalculatorWindow(QtWidgets.QMainWindow):
         self._set_status(f"saved {os.path.basename(path)}", ok=True)
 
     def _set_status(self, msg: str, ok: bool):
-        self.status.setStyleSheet("" if ok else "color:#c53030;")
-        self.status.showMessage(("✓ " if ok else "✗ ") + msg)
+        self._status_label.setStyleSheet("" if ok else "color:#c53030;")
+        self._status_label.setText(("✓ " if ok else "✗ ") + _prose_html(msg))

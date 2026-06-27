@@ -31,7 +31,7 @@ html[data-theme="dark"] {
   --plot-eta: #0a82a2; --plot-u: #0a82a2;
   --area-1: #0a82a2; --area-2: #587836; --area-3: #cbb07e; --area-4: #7c5c3e;
   --area-5: #bc2614; --area-6: #0e9cbe; --area-7: #a98c5b; --area-8: #415a28;
-  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #5a6673;
+  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #2f8f83; --area-12: #5a6673;
 }
 html[data-palette="original"][data-theme="dark"] {                     /* Original - Dark */
   --accent: #2bb8d4; --accent-hover: #5bcee2; --on-accent: #06222a; --danger: #e5654f;
@@ -39,7 +39,7 @@ html[data-palette="original"][data-theme="dark"] {                     /* Origin
   --plot-eta: #2bb8d4; --plot-u: #2bb8d4;
   --area-1: #2bb8d4; --area-2: #9cb57a; --area-3: #dcc8a1; --area-4: #9a7b5c;
   --area-5: #e5654f; --area-6: #5bcee2; --area-7: #cbb07e; --area-8: #74974f;
-  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #93a0ad;
+  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #3aa39a; --area-12: #93a0ad;
 }
 html[data-palette="vibrant"][data-theme="light"] {                    /* Vibrant - Light */
   --accent: #008cb0; --accent-hover: #007393; --on-accent: #ffffff; --danger: #e5210a;
@@ -47,7 +47,7 @@ html[data-palette="vibrant"][data-theme="light"] {                    /* Vibrant
   --plot-eta: #008cb0; --plot-u: #008cb0;
   --area-1: #008cb0; --area-2: #16b048; --area-3: #f5ae1b; --area-4: #8a5f38;
   --area-5: #e5210a; --area-6: #00a8cc; --area-7: #db8c0a; --area-8: #0e9138;
-  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #5a6673;
+  --area-9: #6a4ca8; --area-10: #b83280; --area-11: #2f8f83; --area-12: #5a6673;
 }
 html[data-palette="vibrant"][data-theme="dark"] {                     /* Vibrant - Dark */
   --accent: #1ad2ec; --accent-hover: #5be4f4; --on-accent: #03222a; --danger: #fa5638;
@@ -55,7 +55,7 @@ html[data-palette="vibrant"][data-theme="dark"] {                     /* Vibrant
   --plot-eta: #1ad2ec; --plot-u: #1ad2ec;
   --area-1: #1ad2ec; --area-2: #7de39a; --area-3: #fbcb55; --area-4: #a9805a;
   --area-5: #fa5638; --area-6: #27d9f0; --area-7: #f5ae1b; --area-8: #34cc63;
-  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #93a0ad;
+  --area-9: #9a86d4; --area-10: #d97bb5; --area-11: #3aa39a; --area-12: #93a0ad;
 }
 
 /* ---- vibe tokens (style) ---- */
@@ -204,8 +204,23 @@ th { background: var(--header-bg); }
 .chip-legacy { background: color-mix(in srgb, var(--muted) 22%, transparent); color: var(--muted); }
 .method-note { margin: 4px 0 8px; color: var(--muted); font-size: 13px; max-width: 70ch; }
 .eq { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin: 6px 0; }
-.eq-tex { overflow-x: auto; max-width: 100%; }
+/* wide equations stay horizontally scrollable (wheel/drag) but without the stray bar;
+   the "Pop out" view gives them full width. */
+.eq-tex { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.eq-tex::-webkit-scrollbar { display: none; }
 .eq-desc { color: var(--muted); font-size: 12px; }
+/* labels/outputs with a hover definition */
+.has-tip { cursor: help; }
+/* Method & Equations pop-out button + modal */
+.method-box > summary .spacer { flex: 1; }
+#methodPop { font-size: 12px; padding: 2px 8px; }
+.method-modal { position: fixed; inset: 0; z-index: 9999; background: var(--bg);
+  display: flex; flex-direction: column; }
+.method-modal-bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  border-bottom: var(--bw) solid var(--border); background: var(--header-bg); }
+.method-modal-bar .spacer { flex: 1; }
+.method-modal-body { flex: 1; min-height: 0; overflow: auto; padding: 18px 28px; max-width: 1100px;
+  margin: 0 auto; width: 100%; }
 dl.symbols { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 4px 0 0; }
 dl.symbols dt { font-family: var(--mono); color: var(--label); }
 dl.symbols dd { margin: 0; color: var(--muted); font-size: 13px; }

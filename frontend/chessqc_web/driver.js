@@ -264,7 +264,8 @@ function buildForm() {
       continue;
     }
     const row = document.createElement("div"); row.className = "row"; row.dataset.fieldwrap = fld.key;
-    const lab = document.createElement("label"); lab.textContent = fld.label; lab.title = fld.note || "";
+    if (fld.note) { row.title = fld.note; row.classList.add("has-tip"); }   // hover anywhere in the row
+    const lab = document.createElement("label"); lab.innerHTML = fmtLabel(fld.label);
     let ctl;
     if (fld.kind === "choice") {
       ctl = document.createElement("select");
@@ -281,7 +282,7 @@ function buildForm() {
     }
     ctl.dataset.key = fld.key;
     const unit = document.createElement("span"); unit.className = "unit"; unit.dataset.key = fld.key;
-    unit.textContent = fld.kind === "choice" || fld.kind === "bool" ? "" : fieldUnit(fld);
+    unit.innerHTML = fld.kind === "choice" || fld.kind === "bool" ? "" : fmtLabel(fieldUnit(fld));
     row.append(lab, ctl, unit);
     box.appendChild(row);
   }
@@ -325,15 +326,25 @@ const _GREEK = new Set(["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "e
   "iota", "kappa", "lambda", "mu", "nu", "xi", "pi", "rho", "sigma", "tau", "upsilon", "phi",
   "chi", "psi", "omega"]);
 
-// Turn an ABOUT symbol shorthand (e.g. "U_obs", "u_*", "phi", "Delta T", "bar t") into
+// sub/sup token grammar (shared by every symbol/unit/prose typesetter): a SUBSCRIPT may be a
+// digit fraction (R_1/3), include % (R_2%), or be a word/*; a SUPERSCRIPT is an exponent only
+// (so the unit "m^3/s" keeps the "/s" outside the exponent).
+const _SUBC = "(?:\\d+/\\d+|\\d+\\.\\d+|[A-Za-z0-9'%]+|\\*)";
+const _SUPC = "(?:\\d+\\.\\d+|[A-Za-z0-9']+|\\*)";
+const _SSGRP = `(?:_${_SUBC}|\\^${_SUPC})`;
+const _SYMTOK_RE = new RegExp(`^([A-Za-z]+)((?:${_SSGRP})*)$`);
+const _ssGroups = (s) => [...s.matchAll(/([_^])(\d+\/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)/g)].map((m) => [m[1], m[2]]);
+
+// Turn an ABOUT symbol shorthand (e.g. "U_obs", "u_*", "phi", "Delta T", "bar t", "R_1/3") into
 // LaTeX so it typesets with real subscripts/Greek. Both front-ends share this convention.
-// base + any run of _sub / ^sup groups (e.g. "H_rms^2", "ft^2", "u_*", "z_obs")
 function _symTok(t) {
-  const m = /^([A-Za-z]+)((?:[_^](?:[A-Za-z0-9']+|\*))*)$/.exec(t);
+  const m = _SYMTOK_RE.exec(t);
   if (!m) return t;                                  // not a clean symbol token
   let out = _GREEK.has(m[1].toLowerCase()) ? "\\" + m[1] : m[1];
-  const re = /([_^])([A-Za-z0-9']+|\*)/g; let g;
-  while ((g = re.exec(m[2]))) out += g[1] + (g[2].length > 1 ? "{" + g[2] + "}" : g[2]);
+  for (const [op, txt] of _ssGroups(m[2])) {
+    const t = txt.replace(/%/g, "\\%");        // % is a comment char in (KaTeX/mathtext) LaTeX
+    out += op + (t.length > 1 ? "{" + t + "}" : t);
+  }
   return out;
 }
 function symToTex(s) {
@@ -352,7 +363,7 @@ function symToTex(s) {
 // underscore subscript (z_obs, u_*) or is a spelled-out Greek letter. Typeset just those,
 // leave the rest as text. Returns an HTML string (math via KaTeX renderToString).
 const _MATHTOK = new RegExp(
-  "([A-Za-z]+(?:[_^](?:[A-Za-z0-9']+|\\*))+|(?<![A-Za-z\\\\])(?:" +
+  `([A-Za-z]+(?:${_SSGRP})+|(?<![A-Za-z\\\\])(?:` +
   [..._GREEK].join("|") + "|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega|Gamma" +
   ")(?![A-Za-z]))", "g");
 
@@ -368,6 +379,29 @@ function renderProse(text) {
     html += _escHTML(parts[i]);
   }
   return html;
+}
+
+// Lightweight, NON-italic typesetting for labels/units/status (kN/m^3, ft^2, Hs/(d_n50),
+// K_D=...): super/subscripts via <sub>/<sup>, Greek names to Unicode. Returns an HTML
+// string. (The equation panel uses KaTeX italic math; labels/units read better upright.)
+const _GREEK_UNI = {
+  alpha: "α", beta: "β", gamma: "γ", delta: "δ", epsilon: "ε", zeta: "ζ", eta: "η",
+  theta: "θ", iota: "ι", kappa: "κ", lambda: "λ", mu: "μ", nu: "ν", xi: "ξ", pi: "π",
+  rho: "ρ", sigma: "σ", tau: "τ", upsilon: "υ", phi: "φ", chi: "χ", psi: "ψ", omega: "ω",
+  Delta: "Δ", Theta: "Θ", Lambda: "Λ", Xi: "Ξ", Pi: "Π", Sigma: "Σ", Phi: "Φ", Psi: "Ψ",
+  Omega: "Ω", Gamma: "Γ",
+};
+const _greekUni = (w) => _GREEK_UNI[w] || _GREEK_UNI[w.toLowerCase()];
+function _tokHTML(tok) {
+  const m = _SYMTOK_RE.exec(tok);
+  if (!m) return _greekUni(tok) || _escHTML(tok);
+  let out = _greekUni(m[1]) || _escHTML(m[1]);
+  for (const [op, txt] of _ssGroups(m[2])) { const tag = op === "_" ? "sub" : "sup"; out += `<${tag}>${_escHTML(txt)}</${tag}>`; }
+  return out;
+}
+function fmtLabel(text) {
+  if (text == null || text === "") return "";
+  return String(text).split(_MATHTOK).map((p, i) => (i % 2 ? _tokHTML(p) : _escHTML(p))).join("");
 }
 
 function renderMethodPanel() {
@@ -519,7 +553,7 @@ function buildTable(fld) {
   const htr = document.createElement("tr");
   for (const c of cols) {
     const th = document.createElement("th"); const u = colUnit(c);
-    th.textContent = u ? `${c.label} (${u})` : c.label; htr.appendChild(th);
+    th.innerHTML = u ? `${fmtLabel(c.label)} (${fmtLabel(u)})` : fmtLabel(c.label); htr.appendChild(th);
   }
   const thead = document.createElement("thead"); thead.appendChild(htr);
   t.append(thead, document.createElement("tbody")); wrap.appendChild(t);
@@ -589,12 +623,12 @@ function render(res) {
     const u = outUnit(o), raw = res[o.key];
     // numeric -> convert+format; string (a label like "Beta-Rayleigh", or an inf/nan
     // sentinel from the bridge) -> show as-is with the unit appended when present
-    const txt = typeof raw === "number"
-      ? `${fmtNum(fromSI(raw, u))} ${u}`.trim()
-      : `${raw}${u ? " " + u : ""}`;
+    const numTxt = typeof raw === "number" ? fmtNum(fromSI(raw, u)) : String(raw);
     const row = document.createElement("div"); row.className = "vrow";
-    const n = document.createElement("span"); n.textContent = o.label;
-    const v = document.createElement("span"); v.className = "val"; v.textContent = txt;
+    const n = document.createElement("span"); n.innerHTML = fmtLabel(o.label);
+    if (o.note) { n.title = o.note; n.classList.add("has-tip"); }   // hover definition
+    const v = document.createElement("span"); v.className = "val";
+    v.innerHTML = _escHTML(numTxt) + (u ? " " + fmtLabel(u) : "");
     row.append(n, v); vbox.appendChild(row);
   }
   drawPlot(res); fillTable(res);
@@ -972,7 +1006,7 @@ function onUnits(newSys) {
     if (fld.lo != null) ctl.min = sig(fromSI(fld.lo, newU)); else ctl.removeAttribute("min");
     if (fld.hi != null) ctl.max = sig(fromSI(fld.hi, newU)); else ctl.removeAttribute("max");
     ctl.value = fmtIn(fromSI(si, newU));
-    document.querySelector(`span.unit[data-key="${fld.key}"]`).textContent = newU;
+    document.querySelector(`span.unit[data-key="${fld.key}"]`).innerHTML = fmtLabel(newU);
   }
   for (const fld of contract.inputs) {           // tables: reconvert cells + headers
     if (fld.kind !== "table") continue;
@@ -986,7 +1020,7 @@ function onUnits(newSys) {
       });
     [...wrap.querySelectorAll("thead th")].forEach((th, i) => {
       const u = newSys === "SI" ? siUnit(cols[i].si) : cols[i].us;
-      th.textContent = u ? `${cols[i].label} (${u})` : cols[i].label;
+      th.innerHTML = u ? `${fmtLabel(cols[i].label)} (${fmtLabel(u)})` : fmtLabel(cols[i].label);
     });
   }
   system = newSys;
@@ -994,7 +1028,7 @@ function onUnits(newSys) {
 }
 
 const sig = (x) => (Number.isFinite(x) ? +x.toPrecision(6) : x);
-function setStatus(msg, ok) { const s = $("status"); s.textContent = (ok ? "✓ " : "✗ ") + msg; s.className = ok ? "" : "err"; }
+function setStatus(msg, ok) { const s = $("status"); s.innerHTML = (ok ? "✓ " : "✗ ") + fmtLabel(msg); s.className = ok ? "" : "err"; }
 function fail(msg) { $("overlay").textContent = "Error: " + msg; setStatus(msg, false); }
 
 // --- wire up controls ---
@@ -1052,8 +1086,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const a = document.createElement("a"); a.href = big.toDataURL("image/png");
     a.download = `chessqc_${contract.meta.aces_id}_plot.png`; a.click();
   });
+  // Method & Equations pop-out: clone the (already-typeset) panel body into a wide modal.
+  $("methodPop").addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();          // don't toggle the <details>
+    $("methodModalBody").innerHTML = $("methodBody").innerHTML;
+    $("methodModalTag").textContent = $("methodTag").textContent;
+    $("methodModal").style.display = "flex";
+  });
+  $("methodModalClose").addEventListener("click", () => { $("methodModal").style.display = "none"; });
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && $("plotModal").style.display !== "none") $("plotModal").style.display = "none";
+    if (e.key === "Escape" && $("methodModal").style.display !== "none") $("methodModal").style.display = "none";
   });
   window.addEventListener("resize", () => {
     if ($("plotModal").style.display !== "none" && lastRes) drawPlotInto(lastRes, big);

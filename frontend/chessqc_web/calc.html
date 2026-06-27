@@ -30,7 +30,12 @@
   </header>
 
   <details id="methodBox" class="method-box" style="display:none">
-    <summary><span class="method-title">Method &amp; equations</span><span id="methodTag"></span></summary>
+    <summary>
+      <span class="method-title">Method &amp; Equations</span>
+      <span id="methodTag"></span>
+      <span class="spacer"></span>
+      <button id="methodPop" type="button" title="Open in a wider window">Pop out ⤢</button>
+    </summary>
     <div id="methodBody" class="method-body"></div>
   </details>
 
@@ -59,6 +64,16 @@
       </div>
     </fieldset>
   </main>
+
+  <div id="methodModal" class="method-modal" style="display:none">
+    <div class="method-modal-bar">
+      <span class="method-title">Method &amp; Equations</span>
+      <span id="methodModalTag" class="muted"></span>
+      <span class="spacer"></span>
+      <button id="methodModalClose">Close ✕</button>
+    </div>
+    <div id="methodModalBody" class="method-modal-body"></div>
+  </div>
 
   <div id="plotModal" class="plot-modal" style="display:none">
     <div class="plot-modal-bar">
