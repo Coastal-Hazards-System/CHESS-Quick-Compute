@@ -277,6 +277,9 @@ const CHESSQC_APPS = [
   },
   // remaining area-10 apps under construction; shown as non-clickable "coming soon" cards.
   { id: "10-5", name: "Joint Probability Method", area: "Coastal Hazards", comingSoon: true },
+  // area 11 (Multivariate Analysis) — all under construction.
+  { id: "11-1", name: "Bivariate Copulas", area: "Multivariate Analysis", comingSoon: true },
+  { id: "11-2", name: "Multivariate Copulas", area: "Multivariate Analysis", comingSoon: true },
   {
     id: "M-1",
     name: "Miscellaneous Breaker and Steepness Routines",
@@ -290,7 +293,8 @@ const CHESSQC_APPS = [
 const CHESSQC_AREAS = [
   "Wave Prediction", "Wave Theory", "Wave Transformation", "Structural Design",
   "Wave Runup, Transmission, and Overtopping", "Littoral Processes",
-  "Inlet Processes", "Harbor Design", "Storm Surge", "Coastal Hazards", "Miscellaneous Routines",
+  "Inlet Processes", "Harbor Design", "Storm Surge", "Coastal Hazards",
+  "Multivariate Analysis", "Miscellaneous Routines",
 ];
 
 if (typeof module !== "undefined") module.exports = { CHESSQC_APPS, CHESSQC_AREAS };

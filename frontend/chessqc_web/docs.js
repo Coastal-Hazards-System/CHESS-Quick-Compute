@@ -45,6 +45,7 @@ async function show(file) {
     const md = await res.text();
     marked.setOptions({ gfm: true, breaks: false });
     body.innerHTML = marked.parse(md);
+    if (window.CHESSQC_SYMFMT) CHESSQC_SYMFMT.typeset(body);   // typeset H_0, z_0^0.1429, κ_n …
     body.scrollTop = 0;
     window.scrollTo(0, 0);
   } catch (e) {

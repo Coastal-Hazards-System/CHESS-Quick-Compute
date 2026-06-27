@@ -15,7 +15,7 @@ AREA_ORDER = [
     "Wave Prediction", "Wave Theory", "Wave Transformation", "Structural Design",
     "Wave Runup, Transmission, and Overtopping", "Littoral Processes",
     "Inlet Processes", "Harbor Design", "Storm Surge", "Coastal Hazards",
-    "Miscellaneous Routines",
+    "Multivariate Analysis", "Miscellaneous Routines",
 ]
 
 # Under-construction applications shown as non-clickable "coming soon" cards (parity
@@ -23,6 +23,10 @@ AREA_ORDER = [
 COMING_SOON = {
     "Coastal Hazards": [
         ("10-5", "Joint Probability Method"),
+    ],
+    "Multivariate Analysis": [
+        ("11-1", "Bivariate Copulas"),
+        ("11-2", "Multivariate Copulas"),
     ],
 }
 
