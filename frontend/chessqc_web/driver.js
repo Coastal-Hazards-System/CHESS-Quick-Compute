@@ -329,11 +329,11 @@ const _GREEK = new Set(["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "e
 // sub/sup token grammar (shared by every symbol/unit/prose typesetter): a SUBSCRIPT may be a
 // digit fraction (R_1/3), include % (R_2%), or be a word/*; a SUPERSCRIPT is an exponent only
 // (so the unit "m^3/s" keeps the "/s" outside the exponent).
-const _SUBC = "(?:\\d+/\\d+|\\d+\\.\\d+|[A-Za-z0-9'%]+|\\*)";
-const _SUPC = "(?:\\d+\\.\\d+|[A-Za-z0-9']+|\\*)";
+const _SUBC = "(?:\\([^)]+\\)|\\d+/\\d+|\\d+\\.\\d+|[A-Za-z0-9'%]+|\\*)";
+const _SUPC = "(?:\\([^)]+\\)|\\d+\\.\\d+|[A-Za-z0-9']+|\\*)";
 const _SSGRP = `(?:_${_SUBC}|\\^${_SUPC})`;
 const _SYMTOK_RE = new RegExp(`^([A-Za-z]+)((?:${_SSGRP})*)$`);
-const _ssGroups = (s) => [...s.matchAll(/([_^])(\d+\/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)/g)].map((m) => [m[1], m[2]]);
+const _ssGroups = (s) => [...s.matchAll(/([_^])(\([^)]+\)|\d+\/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)/g)].map((m) => [m[1], m[2]]);
 
 // Turn an ABOUT symbol shorthand (e.g. "U_obs", "u_*", "phi", "Delta T", "bar t", "R_1/3") into
 // LaTeX so it typesets with real subscripts/Greek. Both front-ends share this convention.

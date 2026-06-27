@@ -17,12 +17,12 @@
   const greek = (w) => GREEK[w] || GREEK[w.toLowerCase()];
   // base may start with a Latin letter or a Unicode Greek letter (so "κ_n" works in docs)
   const BASE = "[A-Za-z\\u0391-\\u03c9]+";
-  const SUBC = "(?:\\d+/\\d+|\\d+\\.\\d+|[A-Za-z0-9'%]+|\\*)";
-  const SUPC = "(?:\\d+\\.\\d+|[A-Za-z0-9']+|\\*)";
+  const SUBC = "(?:\\([^)]+\\)|\\d+/\\d+|\\d+\\.\\d+|[A-Za-z0-9'%]+|\\*)";
+  const SUPC = "(?:\\([^)]+\\)|\\d+\\.\\d+|[A-Za-z0-9']+|\\*)";
   const SS = `(?:_${SUBC}|\\^${SUPC})`;
   const TOK_SRC = `(${BASE}(?:${SS})+|(?<![A-Za-z\\\\])(?:${Object.keys(GREEK).join("|")})(?![A-Za-z]))`;
   const SYMTOK = new RegExp(`^(${BASE})((?:${SS})*)$`);
-  const SUBSUP = /([_^])(\d+\/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)/g;
+  const SUBSUP = /([_^])(\([^)]+\)|\d+\/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)/g;
   const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
   function tokHTML(tok) {

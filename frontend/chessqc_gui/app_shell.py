@@ -71,11 +71,11 @@ _GREEK = {"alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", 
 
 # sub/sup token grammar (mirrors the web driver): subscripts allow a digit fraction (R_1/3)
 # and % (R_2%); superscripts are exponents only (so unit "m^3/s" keeps the "/s" outside).
-_SUBC = r"(?:\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)"
-_SUPC = r"(?:\d+\.\d+|[A-Za-z0-9']+|\*)"
+_SUBC = r"(?:\([^)]+\)|\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)"
+_SUPC = r"(?:\([^)]+\)|\d+\.\d+|[A-Za-z0-9']+|\*)"
 _SSGRP = rf"(?:_{_SUBC}|\^{_SUPC})"
 _SYMTOK_RE = re.compile(rf"^([A-Za-z]+)((?:{_SSGRP})*)$")
-_SUBSUP_RE = re.compile(r"([_^])(\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)")
+_SUBSUP_RE = re.compile(r"([_^])(\([^)]+\)|\d+/\d+|\d+\.\d+|[A-Za-z0-9'%]+|\*)")
 
 
 def _sym_tok(t: str) -> str:
